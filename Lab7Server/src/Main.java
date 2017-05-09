@@ -10,12 +10,10 @@ import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import classes.NormalHuman;
+import com.sun.org.apache.bcel.internal.generic.Select;
 import com.sun.xml.internal.ws.util.ByteArrayBuffer;
 import org.postgresql.ds.*;
 
@@ -52,7 +50,6 @@ public class Main {
             System.out.println("Не получается найти драйвер для psql");
             System.exit(1);
         }
-        ByteBuffer buffer = ByteBuffer.allocate(capacity);
         Selector selector=null;
         ServerSocketChannel server = null;
         SelectionKey serverKey=null;
@@ -104,23 +101,35 @@ public class Main {
                             SocketChannel channel = (SocketChannel) key.channel();
                             List<NormalHuman> list = new ArrayList<>();
                             Connection dataBase = pooledDataSource.getConnection();
-                            Statement state = dataBase.createStatement();
-                            ResultSet rs = state.executeQuery("select * from normalhuman");
+                            Statement state = dataBase.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+                            ResultSet rs =  state.executeQuery("select * from normalhuman");
+                            rs.last();
+                            byte[] meta ={'d', (byte) rs.getRow()};
+                            rs.beforeFirst();
+                            channel.write(ByteBuffer.wrap(meta));
                             //Создание ArrayList людей
+                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                            ObjectOutputStream oos = new ObjectOutputStream(baos);
                             while(rs.next()){
                                 NormalHuman nh = new NormalHuman();
                                 nh.setName(rs.getString("name"));
                                 nh.setAge(rs.getLong("age"));
                                 nh.setTroublesWithTheLaw(rs.getBoolean("troublesWithTheLaw"));
-                                ResultSet rs1 = state.executeQuery("select thought from thoughts where id=" + rs.getInt("id")+";");
+                                Statement statement = dataBase.createStatement();
+                                ResultSet rs1 = statement.executeQuery("select thought from thoughts where id=" + rs.getInt("id")+";");
                                 while(rs1.next()){
                                     nh.thinkAbout(rs1.getString("thought"));
                                 }
-                                rs1.close();
+                                System.out.println(nh);
                                 list.add(nh);
                             }
+                            oos.writeObject(list);
+                            channel.write(ByteBuffer.wrap(baos.toByteArray()));
+                            oos.flush();
+                            baos.close();
+                            oos.close();
                             //Приготавливаем буффер к записи
-                            buffer.flip();
+                            /*buffer.clear();
                             //Сериализуем ArrayList в байты
                             ByteArrayOutputStream baos=new ByteArrayOutputStream();
                             ObjectOutputStream oos = new ObjectOutputStream(baos);
@@ -138,15 +147,25 @@ public class Main {
                                 bufferLengthInt=bufferLengthInt>>>8;
                             }
                             //положили в буффер длину сообщения
+                            bufferLengthInt=1284245;
+                            System.out.println("BufferLenghtInt" + bufferLengthInt);
+                            System.out.println(buffer);
                             buffer.put(bufferLengthByte);
+                            System.out.println(buffer);
                             //положили в буффер информацию о содержимом 'd'=данные, 'c'=запрос
+                            System.out.println((byte) 'd');
                             buffer.put((byte)'d');
+                            System.out.println(buffer);
+                            channel.write(buffer);
+
                             //кладём в буффер саму информацию
-                            for(int i=0;i<Math.ceil(bufferLengthInt/capacity);i++){
+                            System.out.println("кладём в буффер саму информацию");
+                            /*for(int i=0;i<Math.ceil(bufferLengthInt/capacity);i++){
                                 buffer.put(nhArray,i*capacity, buffer.remaining()>capacity ? capacity: buffer.remaining());
                                 channel.write(buffer);
-                                buffer.flip();
+                                buffer.clear();
                             }
+                            System.out.println("положил");*/
                             state.close();
                             rs.close();
                             dataBase.close();
