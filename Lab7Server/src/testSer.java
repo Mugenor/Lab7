@@ -38,7 +38,7 @@ public class testSer {
                         SocketChannel newChannel = serverChannel.accept();
                         newChannel.configureBlocking(false);
                         SelectionKey newKey = newChannel.register(selector, SelectionKey.OP_WRITE);
-                        newKey.attach(new ConnectionState(ConnectionState.NEW_DATA));
+                        newKey.attach(ConnectionState.NEW_DATA);
                         System.out.println("Новое соединение: " + newChannel.getLocalAddress());
                     } else if (key.isWritable()) {
                         SocketChannel channel = (SocketChannel) key.channel();

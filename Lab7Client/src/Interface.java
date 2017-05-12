@@ -1,6 +1,8 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.net.InetAddress;
+import java.net.Socket;
 import java.util.*;
 import java.io.*;
 import java.util.List;
@@ -8,6 +10,9 @@ import classes.*;
 import org.json.simple.*;
 
 public class Interface{
+    static Socket socket =null;
+    static InputStream socketIS = null;
+    static OutputStream socketOS = null;
     private static boolean isChanged = false;
     private static JFrame jf = new JFrame();
     private static JPanel panelu = new JPanel();
@@ -16,18 +21,17 @@ public class Interface{
     private static JButton showThoughtsButton = new JButton("Show thoughts");
     private static JButton editButton = new JButton("Edit");
     private static JButton deleteButton = new JButton("Delete");
-    private static String myVar = null;
     private static String file="";
     private static Color color=null;
     private static JButton colorChooserButton = new JButton("Choose color!");
-    private static LinkedList<NormalHuman> coll = new LinkedList<NormalHuman>();
+    private static LinkedList<NormalHuman> coll =null;
     private static DefaultListModel<String> dlm= new DefaultListModel<>();
     private static JList<String> listCommands = new JList<>(dlm);
     private static JButton doButton;
     private static CollectTable collt = new CollectTable();
-    private static JTable collections = new JTable(collt);;
-    private static ButtonsUnderTable but= new ButtonsUnderTable(collections, collt, coll);
-    private static ButtonsWithCommands bwc= new ButtonsWithCommands(listCommands, coll, collt, collections);
+    private static JTable collections = new JTable(collt);
+    private static ButtonsUnderTable but=null;
+    private static ButtonsWithCommands bwc=null;
     private static CloseFrame cf = new CloseFrame(bwc);
     public static void setIsChanged(boolean changed){
         isChanged = changed;
@@ -76,6 +80,8 @@ public class Interface{
         });
     }
     Interface(){
+        but =  new ButtonsUnderTable(collections, collt, coll);
+        bwc = new ButtonsWithCommands(listCommands, coll, collt, collections);
         showThoughtsButton.setFont(new Font("Verdana", Font.BOLD,13));
         editButton.setFont(new Font("Verdana", Font.BOLD,13));
         deleteButton.setFont(new Font("Verdana", Font.BOLD,13));
@@ -291,56 +297,16 @@ public class Interface{
 
 
     public static void main(String[] args){
-        boolean er = false;
-        final String var="Source";
-        List<String> lines;
-        try{myVar= System.getenv(var) + "\\din.json";
-            if(myVar==null) throw new NullPointerException();
-            File f = new File(myVar);
-            lines = fromFileToString(myVar);
-            ArrayList<String> jsonLines = firstParse(lines);
-            coll = toObject(coll, jsonLines);}
-        catch(NullPointerException e){
-            er = true;
-            try{
-                SwingUtilities.invokeAndWait(new Runnable() {
-                    @Override
-                    public void run() {
-                        ExceptionFrame.init("There is no environment variable "+var+".", ExceptionFrame.EXIT_ON_CLOSE);
-                    }
-                });
-            } catch(Exception exception){}}
-        catch (FileNotFoundException e){
-            er = true;
-            try{
-                SwingUtilities.invokeAndWait(new Runnable() {
-                    @Override
-                    public void run() {
-                        ExceptionFrame.init("Outter file is not exists. \nChange your environment variable.", ExceptionFrame.EXIT_ON_CLOSE);
-                    }
-                });} catch(Exception exception){}
-        }catch (SecurityException e){
-            er = true;
-            try{
-                SwingUtilities.invokeAndWait(new Runnable() {
-                    @Override
-                    public void run() {
-                        ExceptionFrame.init("You have no access for this file.\nChange your environment variable.", ExceptionFrame.EXIT_ON_CLOSE);
-                    }
-                });} catch(Exception exception){}
-        }catch(IOException e){
-            er = true;
-            try{
-                SwingUtilities.invokeAndWait(new Runnable() {
-                    @Override
-                    public void run() {
-                        ExceptionFrame.init("There is not a file in environment variable.", ExceptionFrame.EXIT_ON_CLOSE);
-                    }
-                });} catch(Exception exception){}
-        }
-        file=myVar;
-        if(!er){
-            SwingUtilities.invokeLater(()-> new Interface());
+        try {
+            socket = new Socket(InetAddress.getLocalHost(), 1000);
+            socketIS = socket.getInputStream();
+            socketOS = socket.getOutputStream();
+            ObjectInputStream ois = new ObjectInputStream(socketIS);
+            Message message = (Message) ois.readObject();
+            coll = message.getData();
+            SwingUtilities.invokeLater(() -> new Interface());
+        }catch(Exception e){
+            e.printStackTrace();
         }
     }
 }

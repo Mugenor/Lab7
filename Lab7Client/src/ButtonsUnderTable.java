@@ -41,7 +41,10 @@ public class ButtonsUnderTable {
             SwingUtilities.invokeLater(new Runnable() {
                 @Override
                 public void run() {
-                    ew = new EditWindow("Edit Person", coll.get(collections.getSelectedRow()), collt, collections.getSelectedRow(), new EditExit() {
+                    ew = new EditWindow("Edit Person",
+                            coll.get(collections.getSelectedRow()),
+                            collt, collections.getSelectedRow(),
+                            new EditExit() {
                         @Override
                         public void doOnExit() {
                             openedEditWindow = false;
