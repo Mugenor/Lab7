@@ -13,6 +13,8 @@ public class Interface{
     static Socket socket =null;
     static InputStream socketIS = null;
     static OutputStream socketOS = null;
+    static ObjectInputStream  ois = null;
+    static ObjectOutputStream oos = null;
     private static boolean isChanged = false;
     private static JFrame jf = new JFrame();
     private static JPanel panelu = new JPanel();
@@ -301,7 +303,8 @@ public class Interface{
             socket = new Socket(InetAddress.getLocalHost(), 1000);
             socketIS = socket.getInputStream();
             socketOS = socket.getOutputStream();
-            ObjectInputStream ois = new ObjectInputStream(socketIS);
+            ois = new ObjectInputStream(socketIS);
+            oos = new ObjectOutputStream(socketOS);
             Message message = (Message) ois.readObject();
             coll = message.getData();
             SwingUtilities.invokeLater(() -> new Interface());

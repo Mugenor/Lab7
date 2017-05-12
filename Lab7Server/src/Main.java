@@ -1,6 +1,7 @@
 import java.io.*;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -59,6 +60,7 @@ public class Main {
         try {
             server = ServerSocketChannel.open();
             server.configureBlocking(false);
+
             server.bind(new InetSocketAddress(InetAddress.getLocalHost(), serverPort));
             serverKey = server.register(selector, SelectionKey.OP_ACCEPT);
         }catch (IOException e){
@@ -86,7 +88,6 @@ public class Main {
                 }catch(Exception e){
                     e.printStackTrace();
                 }
-
             }
         });
         //Цикл сервера
@@ -94,34 +95,38 @@ public class Main {
             while (true) {
                 selector.select();
                 Set keys = selector.selectedKeys();
-                Iterator it = keys.iterator();
-                while(it.hasNext()){
-                    SelectionKey key =(SelectionKey) it.next();
-                    it.remove();
-                    //Если кто-то подключился, то регистрируем в селекторе и записываем в него массив людей
-                    if(key.isAcceptable()){
-                        SocketChannel newChannel = server.accept();
-                        newChannel.configureBlocking(false);
-                        SelectionKey newKey = newChannel.register(selector, SelectionKey.OP_WRITE);
-                        //Создание отдельного потока для пользователя и связывание его с ключом
-                        Exchanger<Boolean> exchanger = new Exchanger<>();
-                        ClientThread newClientThread = new ClientThread(newChannel, newKey, exchanger);
-                        newClientThread.setConnectionState(ConnectionState.NEW_DATA);
-                        newKey.attach(newClientThread);
-                        System.out.println("Новое соединение: " + newChannel.getLocalAddress());
-                    }
-                    //Чтение из каналов
-                    else if(key.isReadable()){
-                        //запуск потока по ключу
-                        ClientThread clientThread = (ClientThread) key.attachment();
-                        //true - readable, false - writable
-                        executor.execute(clientThread);
-                    }
-                    //Запись в каналы
-                    else if(key.isWritable()){
-                        //запуск потока по ключу
-                        ClientThread clientThread = (ClientThread) key.attachment();
-                        executor.execute(clientThread);
+                if (keys.size() != 0) {
+                    Iterator it = keys.iterator();
+                    while (it.hasNext()) {
+                        SelectionKey key = (SelectionKey) it.next();
+                        it.remove();
+                        //Если кто-то подключился, то регистрируем в селекторе и записываем в него массив людей
+                        if (key.isAcceptable()) {
+                            SocketChannel newChannel = server.accept();
+                            newChannel.configureBlocking(false);
+                            SelectionKey newKey = newChannel.register(selector, SelectionKey.OP_WRITE);
+                            //Создание отдельного потока для пользователя и связывание его с ключом
+                            ClientThread newClientThread = new ClientThread(newChannel, newKey);
+                            newClientThread.makeRequest(ConnectionState.NEW_DATA);
+                            newKey.attach(newClientThread);
+                            System.out.println("Новое соединение: " + newChannel.getLocalAddress());
+                        }
+                        //Чтение из каналов
+                        else if (key.isReadable()) {
+                            //запуск потока по ключу
+                            ClientThread clientThread = (ClientThread) key.attachment();
+                            if (clientThread.getCurrentMessageID() != clientThread.getMessage().getID()) {
+                                executor.execute(clientThread);
+                            }
+                        }
+                        //Запись в каналы
+                        else if (key.isWritable()) {
+                            //запуск потока по ключу
+                            ClientThread clientThread = (ClientThread) key.attachment();
+                            if (clientThread.getCurrentMessageID() != clientThread.getMessage().getID()) {
+                                executor.execute(clientThread);
+                            }
+                        }
                     }
                 }
             }

@@ -10,9 +10,11 @@ public class Message implements Serializable {
     protected static final long serialVersionUID = 42L;
     private int state;
     private LinkedList<NormalHuman> data;
+    private long id;
     public Message(int state, LinkedList<NormalHuman> data){
         this.state=state;
         this.data=data;
+        id=-1;
     }
     public Message(int state){
         this.state=state;
@@ -29,5 +31,11 @@ public class Message implements Serializable {
     }
     public void setData(LinkedList<NormalHuman> data){
         this.data=data;
+    }
+    public void updateID(){
+        id++;
+    }
+    public long getID(){
+        return id;
     }
 }

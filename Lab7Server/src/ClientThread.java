@@ -9,42 +9,37 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.sql.SQLException;
 import java.util.LinkedList;
-import java.util.List;
-import java.util.Properties;
-import java.util.concurrent.BrokenBarrierException;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.Exchanger;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.*;
 
 /**
  * Created by Mugenor on 11.05.2017.
  */
 public class ClientThread extends Thread {
     private Message message;
-    private CyclicBarrier lock;
     private SocketChannel channel;
     private SelectionKey key;
-    private Exchanger<Boolean> exchanger;
-
-    public ClientThread(SocketChannel channel , SelectionKey key, Exchanger<Boolean> exchanger){
-        lock = new CyclicBarrier(2);
+    private BlockingQueue<Integer> requests;
+    private long currentMessageID;
+    private boolean needData;
+    public ClientThread(SocketChannel channel , SelectionKey key){
         message = new Message(ConnectionState.NEW_DATA);
         this.channel=channel;
         this.key = key;
-        this.exchanger=exchanger;
+        this.requests = new ArrayBlockingQueue<>(5);
+        this.currentMessageID=-1;
+        needData=false;
     }
     public ClientThread(Message message, SocketChannel channel, SelectionKey key, Exchanger<Boolean> exchanger){
         this.message=message;
-        lock = new CyclicBarrier(2);
         this.channel = channel;
         this.key = key;
-        this.exchanger=exchanger;
+        this.currentMessageID=message.getID();
+        this.requests = new ArrayBlockingQueue<>(5);
+        needData=false;
     }
-    public Exchanger<Boolean> getExchanger(){
-        return exchanger;
+    public long getCurrentMessageID(){return currentMessageID;}
+    public void makeRequest(int i) throws InterruptedException{
+        requests.put(i);
     }
     public void setMessage(Message message){
         this.message = message;
@@ -57,15 +52,26 @@ public class ClientThread extends Thread {
     }
     public void run(){
         try {
-                switch (message.getState()) {
-                    case ConnectionState.NEW_DATA:
-                        sendData();
-                        message.setState(ConnectionState.WAITING);
-                        break;
-                    case ConnectionState.WAITING: break;
+            synchronized (this) {
+                while (requests.size() != 0) {
+                    switch (requests.take()) {
+                        case ConnectionState.NEW_DATA:
+                            sendData();
+                            break;
+                        case ConnectionState.DISCONNECT:
+                            disconnect();
+                            break;
+                    }
                 }
-                System.out.println("Kruchus'");
-        }catch (Exception e){
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    private void disconnect(){
+        try {
+            channel.close();
+        }catch (IOException e){
             e.printStackTrace();
         }
     }
