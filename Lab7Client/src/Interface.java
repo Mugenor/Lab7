@@ -7,14 +7,16 @@ import java.util.*;
 import java.io.*;
 import java.util.List;
 import classes.*;
+import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream;
 import org.json.simple.*;
 
 public class Interface{
-    static Socket socket =null;
-    static InputStream socketIS = null;
-    static OutputStream socketOS = null;
-    static ObjectInputStream  ois = null;
-    static ObjectOutputStream oos = null;
+    static Socket socket;
+    static InputStream socketIS;
+    static OutputStream socketOS;
+    static ObjectInputStream  ois;
+    static ObjectOutputStream oos;
+    static Message message;
     private static boolean isChanged = false;
     private static JFrame jf = new JFrame();
     private static JPanel panelu = new JPanel();
@@ -296,16 +298,29 @@ public class Interface{
         return nh;
 
     }
-
+    public static void writeMessage()throws IOException{
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutputStream objectOutputStream = new ObjectOutputStream(baos);
+        objectOutputStream.writeObject(message);
+        socketOS.write((byte)Math.ceil((double)baos.size()/2048.0));
+        oos.writeObject(message);
+    }
 
     public static void main(String[] args){
         try {
             socket = new Socket(InetAddress.getLocalHost(), 1000);
             socketIS = socket.getInputStream();
             socketOS = socket.getOutputStream();
-            ois = new ObjectInputStream(socketIS);
             oos = new ObjectOutputStream(socketOS);
-            Message message = (Message) ois.readObject();
+            System.out.println("oos");
+            ois = new ObjectInputStream(socketIS);
+            System.out.println("ois");
+            message = new Message(ConnectionState.NEED_DATA);
+            message.clearData();
+            System.out.println("Пытаюсь отправить сообщение");
+            writeMessage();
+            message = (Message) ois.readObject();
+            System.out.println("Пытаюсь принять сообщение");
             coll = message.getData();
             SwingUtilities.invokeLater(() -> new Interface());
         }catch(Exception e){

@@ -8,25 +8,25 @@ import java.util.LinkedList;
  */
 public class Message implements Serializable {
     protected static final long serialVersionUID = 42L;
-    private int state;
+    private byte state;
     private LinkedList<NormalHuman> data;
     private long id;
-    public Message(int state, LinkedList<NormalHuman> data){
+    public Message(byte state, LinkedList<NormalHuman> data){
         this.state=state;
         this.data=data;
         id=-1;
     }
-    public Message(int state){
+    public Message(byte state){
         this.state=state;
         data = new LinkedList<>();
     }
     public LinkedList<NormalHuman> getData(){
         return data;
     }
-    public void setState(int state){
+    public void setState(byte state){
         this.state=state;
     }
-    public int getState(){
+    public byte getState(){
         return state;
     }
     public void setData(LinkedList<NormalHuman> data){
@@ -38,4 +38,6 @@ public class Message implements Serializable {
     public long getID(){
         return id;
     }
+    public void clearData(){data=null;}
+    public boolean isData(){return data!=null;}
 }

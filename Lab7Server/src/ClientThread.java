@@ -1,9 +1,7 @@
 import classes.KarlsonNameException;
 import classes.NormalHuman;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
@@ -18,27 +16,29 @@ public class ClientThread extends Thread {
     private Message message;
     private SocketChannel channel;
     private SelectionKey key;
-    private BlockingQueue<Integer> requests;
+    private BlockingQueue<Byte> requests;
     private long currentMessageID;
     private boolean needData;
+    private boolean isConnected;
     public ClientThread(SocketChannel channel , SelectionKey key){
-        message = new Message(ConnectionState.NEW_DATA);
         this.channel=channel;
         this.key = key;
         this.requests = new ArrayBlockingQueue<>(5);
         this.currentMessageID=-1;
         needData=false;
+        isConnected=true;
     }
-    public ClientThread(Message message, SocketChannel channel, SelectionKey key, Exchanger<Boolean> exchanger){
+    public ClientThread(Message message, SocketChannel channel, SelectionKey key){
         this.message=message;
         this.channel = channel;
         this.key = key;
         this.currentMessageID=message.getID();
         this.requests = new ArrayBlockingQueue<>(5);
         needData=false;
+        isConnected=true;
     }
     public long getCurrentMessageID(){return currentMessageID;}
-    public void makeRequest(int i) throws InterruptedException{
+    public void makeRequest(byte i) throws InterruptedException{
         requests.put(i);
     }
     public void setMessage(Message message){
@@ -47,35 +47,66 @@ public class ClientThread extends Thread {
     public Message getMessage(){
         return message;
     }
-    public void setConnectionState(int i){
+    public void setConnectionState(byte i){
         message.setState(i);
     }
     public void run(){
         try {
-            synchronized (this) {
-                while (requests.size() != 0) {
+            while (!requests.isEmpty()) {
+                System.out.println("Кручусь");
+                synchronized (this) {
                     switch (requests.take()) {
-                        case ConnectionState.NEW_DATA:
-                            sendData();
+                        case ConnectionState.READ:
+                            read();
+                            break;
+                        case ConnectionState.NEED_DATA:
+                            sentData();
                             break;
                         case ConnectionState.DISCONNECT:
                             disconnect();
                             break;
+                        case ConnectionState.FINAL_ITERATE:
+                            break;
                     }
                 }
             }
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             e.printStackTrace();
         }
+    }
+    private void read(){
+    /*    try {
+            ByteBuffer size = ByteBuffer.allocate(1);
+            channel.read(size);
+            byte j = size.get(0);
+            System.out.println(j+ " : " +2048*j);
+            ByteBuffer mes = ByteBuffer.allocate(2048 * j);
+            channel.read(mes);
+            ByteArrayInputStream bais = new ByteArrayInputStream(mes.array());
+            ObjectInputStream ois = new ObjectInputStream(bais);
+            message = (Message) ois.readObject();
+            if (currentMessageID != message.getID()) {
+                currentMessageID = message.getID();
+                requests.put(message.getState());
+            }
+            ois.close();
+            System.out.println("Закончил чтение");
+        }catch (Exception e){
+            e.printStackTrace();
+        }*/
     }
     private void disconnect(){
         try {
             channel.close();
-        }catch (IOException e){
+            key.cancel();
+            isConnected=false;
+            requests.put(ConnectionState.FINAL_ITERATE);
+        }catch (InterruptedException | IOException e){
             e.printStackTrace();
         }
     }
-    private void sendData() throws SQLException, IOException, KarlsonNameException{
+    private void sentData() throws SQLException, IOException, KarlsonNameException{
             LinkedList<NormalHuman> list = new LinkedList<>();
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             ObjectOutputStream oos = new ObjectOutputStream(baos);
@@ -95,10 +126,10 @@ public class ClientThread extends Thread {
             Main.normalHumans.beforeFirst();
             message.setState(ConnectionState.NEW_DATA);
             message.setData(list);
+            message.updateID();
             oos.writeObject(message);
             channel.write(ByteBuffer.wrap(baos.toByteArray()));
             oos.flush();
             oos.close();
-            key.interestOps(SelectionKey.OP_READ);
     }
 }

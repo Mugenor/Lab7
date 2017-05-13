@@ -104,28 +104,20 @@ public class Main {
                         if (key.isAcceptable()) {
                             SocketChannel newChannel = server.accept();
                             newChannel.configureBlocking(false);
-                            SelectionKey newKey = newChannel.register(selector, SelectionKey.OP_WRITE);
+                            SelectionKey newKey = newChannel.register(selector, SelectionKey.OP_READ);
                             //Создание отдельного потока для пользователя и связывание его с ключом
                             ClientThread newClientThread = new ClientThread(newChannel, newKey);
-                            newClientThread.makeRequest(ConnectionState.NEW_DATA);
                             newKey.attach(newClientThread);
                             System.out.println("Новое соединение: " + newChannel.getLocalAddress());
                         }
                         //Чтение из каналов
                         else if (key.isReadable()) {
                             //запуск потока по ключу
+                            System.out.println("Читать");
                             ClientThread clientThread = (ClientThread) key.attachment();
-                            if (clientThread.getCurrentMessageID() != clientThread.getMessage().getID()) {
-                                executor.execute(clientThread);
-                            }
-                        }
-                        //Запись в каналы
-                        else if (key.isWritable()) {
-                            //запуск потока по ключу
-                            ClientThread clientThread = (ClientThread) key.attachment();
-                            if (clientThread.getCurrentMessageID() != clientThread.getMessage().getID()) {
-                                executor.execute(clientThread);
-                            }
+                            clientThread.makeRequest(ConnectionState.READ);
+                            executor.execute(clientThread);
+                            System.out.println("пробую прочитать");
                         }
                     }
                 }
