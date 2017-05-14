@@ -185,6 +185,8 @@ public class ButtonsWithCommands {
                         NormalHuman nh = Interface.StringToObject(str);
                         String[] strArray = {nh.getName(), nh.getAge().toString(), nh.getTroublesWithTheLaw().toString()};
                         System.out.println("Old coll: " + coll);
+                        Interface.message.maxID++;
+                        nh.setId(Interface.message.maxID);
                         collt.addData(strArray);
                         coll.add(nh);
                         System.out.println("New coll: " + coll);

@@ -10,10 +10,13 @@ public class Message implements Serializable {
     protected static final long serialVersionUID = 42L;
     private byte state;
     private LinkedList<NormalHuman> data;
-    private int typeOfOperation;
+    private byte typeOfOperation;
+    public int maxID;
     public static final byte delete = 0;
     public static final byte add = 1;
     public static final byte change = 2;
+    public void setTypeOfOperation(byte typeOfOperation) {this.typeOfOperation = typeOfOperation;}
+    public int getTypeOfOperation() {return typeOfOperation;}
     public Message(byte state, LinkedList<NormalHuman> data){
         this.state=state;
         this.data=data;
@@ -21,9 +24,6 @@ public class Message implements Serializable {
     public Message(byte state){
         this.state=state;
         data = new LinkedList<>();
-    }
-    public void setTypeOfOperation(int typeOfOperation){
-        this.typeOfOperation=typeOfOperation;
     }
     public LinkedList<NormalHuman> getData(){
         return data;

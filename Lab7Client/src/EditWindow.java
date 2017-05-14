@@ -214,7 +214,10 @@ public class EditWindow extends JFrame {
             nh.setTroublesWithTheLaw(True.isSelected());
             Interface.message.getData().clear();
             Interface.message.getData().add(nh);
-            if(numberRow==(-1)) {collections.addData(nh);
+            if(numberRow==(-1)) {
+                Interface.message.maxID++;
+                nh.setId(Interface.message.maxID);
+                collections.addData(nh);
                 linkedList.add(nh);
                 Interface.message.setTypeOfOperation(Message.add);}
             else {

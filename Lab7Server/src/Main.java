@@ -1,5 +1,8 @@
 import java.io.*;
-import java.net.*;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -27,11 +30,14 @@ public class Main {
     private static InetAddress host;
     private static DataBaseCommunication dbc;
     private static Selector selector;
+    static int maxID=-1;
     static CachedRowSet normalHumans;
     static CachedRowSet thoughts;
-    static ServerSocket secondServerSocket;
     public static Selector getSelector(){
         return selector;
+    }
+    public static DataBaseCommunication getDbc(){
+        return dbc;
     }
     public static void main(String args[]){
         try {
@@ -47,6 +53,9 @@ public class Main {
         }catch (ClassNotFoundException e) {
             System.out.println("Не получается найти драйвер для psql");
             System.exit(1);
+        }catch (SQLException e){
+            System.out.println("Не получается подключится к БД");
+            System.exit(1);
         }
         ServerSocketChannel server = null;
         SelectionKey serverKey=null;
@@ -59,10 +68,9 @@ public class Main {
         }
         //Открытие канала сервера и его регистрирование в селекторе
         try {
-            secondServerSocket = new ServerSocket();
-            secondServerSocket.bind(new InetSocketAddress(InetAddress.getLocalHost(), 1001));
             server = ServerSocketChannel.open();
             server.configureBlocking(false);
+
             server.socket().bind(new InetSocketAddress(InetAddress.getLocalHost(), serverPort));
             serverKey = server.register(selector, SelectionKey.OP_ACCEPT);
         }catch (IOException e){
@@ -74,6 +82,12 @@ public class Main {
         try{
            normalHumans = dbc.registerQueryAndGetRowSet("select * from normalhuman;");
            thoughts = dbc.registerQueryAndGetRowSet("select * from thoughts;");
+            while(normalHumans.next()){
+                int id = normalHumans.getInt("id");
+                if(id>maxID)maxID=id;
+            }
+            normalHumans.beforeFirst();
+            System.out.println(maxID);
         }catch (SQLException e){
             System.out.println("Can't get info from DataBase");
             e.printStackTrace();
@@ -118,7 +132,7 @@ public class Main {
                         else if (key.isReadable()) {
                             ClientThread clientThread = (ClientThread) key.attachment();
                             System.out.println("Пытаюсь сделать запрос READ");
-                            if ((System.currentTimeMillis() - clientThread.correctRequest)>500) {
+                            if ((System.currentTimeMillis() - clientThread.correctRequest)>100) {
                                 clientThread.correctRequest=System.currentTimeMillis();
                                 clientThread.makeRequest(ConnectionState.READ);
                                 System.out.println("Сделал запрос READ");

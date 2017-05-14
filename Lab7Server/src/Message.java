@@ -10,15 +10,21 @@ public class Message implements Serializable {
     protected static final long serialVersionUID = 42L;
     private byte state;
     private LinkedList<NormalHuman> data;
-    private long id;
+    private byte typeOfOperation;
+    public int maxID;
+    public static final byte delete = 0;
+    public static final byte add = 1;
+    public static final byte change = 2;
+    public void setTypeOfOperation(byte typeOfOperation) {this.typeOfOperation = typeOfOperation;}
+    public int getTypeOfOperation() {return typeOfOperation;}
     public Message(byte state, LinkedList<NormalHuman> data){
         this.state=state;
         this.data=data;
-        id=-1;
     }
     public Message(byte state){
         this.state=state;
         data = new LinkedList<>();
+        maxID=Main.maxID;
     }
     public LinkedList<NormalHuman> getData(){
         return data;
@@ -31,12 +37,6 @@ public class Message implements Serializable {
     }
     public void setData(LinkedList<NormalHuman> data){
         this.data=data;
-    }
-    public void updateID(){
-        id++;
-    }
-    public long getID(){
-        return id;
     }
     public void clearData(){data=null;}
     public boolean isData(){return data!=null;}

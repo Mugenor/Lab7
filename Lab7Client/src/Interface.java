@@ -328,7 +328,6 @@ public class Interface{
     }
     public static void main(String[] args){
         try {
-            Socket secondSocket = new Socket(InetAddress.getLocalHost(),1001);
             gson = new Gson();
             socket = new Socket(InetAddress.getLocalHost(), 1000);
             socketOS = socket.getOutputStream();
@@ -337,10 +336,11 @@ public class Interface{
             dos = new DataOutputStream(socketOS);
             System.out.println("Потоки созданы");
             message = new Message(ConnectionState.NEED_DATA);
+            message.maxID=-10;
             message.clearData();
             sendMessage();
             getMessage();
-            coll = message.getData();
+            coll = new LinkedList<>(message.getData());
             SwingUtilities.invokeLater(() -> new Interface());
         }catch(Exception e){
             e.printStackTrace();

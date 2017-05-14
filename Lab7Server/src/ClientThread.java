@@ -3,7 +3,6 @@ import classes.NormalHuman;
 import com.google.gson.Gson;
 
 import java.io.*;
-import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
@@ -20,7 +19,6 @@ public class ClientThread extends Thread {
     private SocketChannel channel;
     private SelectionKey key;
     private BlockingQueue<Byte> requests;
-    private long currentMessageID;
     private boolean needData;
     private boolean isConnected;
     private ByteBuffer bb;
@@ -30,26 +28,21 @@ public class ClientThread extends Thread {
         this.channel=channel;
         this.key = key;
         this.requests = new ArrayBlockingQueue<>(5);
-        this.currentMessageID=-1;
         needData=false;
         isConnected=true;
         bb = ByteBuffer.allocate(512);
         gson = new Gson();
-        new SecondConnection().start();
     }
     public ClientThread(Message message, SocketChannel channel, SelectionKey key){
         this.message=message;
         this.channel = channel;
         this.key = key;
-        this.currentMessageID=message.getID();
         this.requests = new ArrayBlockingQueue<>(5);
         needData=false;
         isConnected=true;
         bb = ByteBuffer.allocate(512);
         gson = new Gson();
-        new SecondConnection().start();
     }
-    public long getCurrentMessageID(){return currentMessageID;}
     public void makeRequest(byte i) throws InterruptedException{
         requests.put(i);
     }
@@ -72,13 +65,12 @@ public class ClientThread extends Thread {
                             read();
                             break;
                         case ConnectionState.NEED_DATA:
-                            System.out.println(requests.size());
                             System.out.println("In run SENDINGDATA");
                             sendData();
                             break;
                         case ConnectionState.NEW_DATA:
                             System.out.println("In NEW_DATA");
-                            key.interestOps(SelectionKey.OP_READ);
+                            update();
                             break;
                         case ConnectionState.DISCONNECT:
                             disconnect();
@@ -91,6 +83,12 @@ public class ClientThread extends Thread {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+    private void update(){
+        try{
+            Main.getDbc().Update(message);
+            key.interestOps(SelectionKey.OP_READ);
+        }catch(Exception e){e.printStackTrace();}
     }
     private void read(){
         try {
@@ -117,6 +115,8 @@ public class ClientThread extends Thread {
             makeRequest(message.getState());
             System.out.println(requests.size());
             System.out.println("Запрос сделан");
+            if(message.maxID!=-10)
+                Main.maxID=message.maxID;
             key.interestOps(SelectionKey.OP_WRITE);
         }catch (Exception e){
             e.printStackTrace();
@@ -135,11 +135,14 @@ public class ClientThread extends Thread {
     }
     private void sendData() throws SQLException, IOException, KarlsonNameException{
             LinkedList<NormalHuman> list = new LinkedList<>();
+            Main.normalHumans = Main.getDbc().registerQueryAndGetRowSet("select * from normalhuman;");
+            Main.thoughts = Main.getDbc().registerQueryAndGetRowSet("select * from thoughts;");
             while (Main.normalHumans.next()) {
                 NormalHuman nh = new NormalHuman();
                 nh.setName(Main.normalHumans.getString("name"));
                 nh.setAge(Main.normalHumans.getLong("age"));
                 nh.setTroublesWithTheLaw(Main.normalHumans.getBoolean("troublesWithTheLaw"));
+                nh.setId(Main.normalHumans.getInt("id"));
                 while (Main.thoughts.next()) {
                     if (Main.normalHumans.getInt("id") == Main.thoughts.getInt("id"))
                         nh.thinkAbout(Main.thoughts.getString("thought"));
@@ -151,7 +154,11 @@ public class ClientThread extends Thread {
             Main.normalHumans.beforeFirst();
             message.setState(ConnectionState.NEW_DATA);
             message.setData(list);
+            message.maxID=Main.maxID;
             String mes = gson.toJson(message);
+           /* ByteBuffer buf = ByteBuffer.allocate(mes.getBytes().length + 1);
+            buf.put((byte)mes.getBytes().length);
+            buf.put(mes.getBytes());*/
             ByteBuffer buf = ByteBuffer.wrap(mes.getBytes());
             channel.write(buf);
             key.interestOps(SelectionKey.OP_READ);
