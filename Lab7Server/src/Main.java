@@ -119,7 +119,7 @@ public class Main {
                         else if (key.isReadable()) {
                             ClientThread clientThread = (ClientThread) key.attachment();
                             System.out.println("Пытаюсь сделать запрос READ");
-                            if ((System.currentTimeMillis() - clientThread.correctRequest)>300) {
+                            if ((System.currentTimeMillis() - clientThread.correctRequest)>100) {
                                 clientThread.correctRequest=System.currentTimeMillis();
                                 clientThread.makeRequest(ConnectionState.READ);
                                 System.out.println("Сделал запрос READ");

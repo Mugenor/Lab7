@@ -68,9 +68,11 @@ public class ClientThread extends Thread {
                             System.out.println("In run READING");
                             read();
                             break;
-                        case ConnectionState.NEED_DATA | ConnectionState.NEW_DATA:
+                        case ConnectionState.NEED_DATA:
                             System.out.println("In run SENDINGDATA");
                             sendData();
+                            break;
+                        case ConnectionState.NEW_DATA:
                             break;
                         case ConnectionState.DISCONNECT:
                             disconnect();

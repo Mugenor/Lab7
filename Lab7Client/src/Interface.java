@@ -142,7 +142,6 @@ public class Interface{
             public void actionPerformed(ActionEvent e) {
                 but.delete();
                 message.setData(coll);
-                message.updateID();
                 message.setState(ConnectionState.NEW_DATA);
             }
         });
