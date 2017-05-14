@@ -356,12 +356,11 @@ public class Interface{
             System.arraycopy(mesOut.getBytes(),0, buf,1, mesOut.length());
             dos.write(buf);
             StringBuilder mesIn = new StringBuilder();
-            System.out.println("Zhdu");
-            int size = dis.readUnsignedByte();
-            System.out.println("Dozhdalsya");
-            for(int i=0;i<size;i++){
-                mesIn.append(dis.readChar());
+            mesIn.append((char)dis.read());
+            while(dis.available()!=0) {
+                mesIn.append((char) dis.read());
             }
+            System.out.println(mesIn);
             message =  gson.fromJson(mesIn.toString(), Message.class);
             coll = message.getData();
             SwingUtilities.invokeLater(() -> new Interface());

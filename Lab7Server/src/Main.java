@@ -80,7 +80,7 @@ public class Main {
             e.printStackTrace();
             return;
         }
-        ExecutorService executor = Executors.newCachedThreadPool();
+        ExecutorService executor = Executors.newFixedThreadPool(10);
         Runtime.getRuntime().addShutdownHook(new Thread(){
             public void run(){
                 try {
@@ -120,9 +120,16 @@ public class Main {
                             //запуск потока по ключу
                             ClientThread clientThread = (ClientThread) key.attachment();
                             System.out.println("Пытаюсь сделать запрос READ");
-                            clientThread.makeRequest(ConnectionState.READ);
-                            System.out.println("Сделал запрос READ");
+                            if ((System.currentTimeMillis() - clientThread.correctRequest)>300) {
+                                clientThread.correctRequest=System.currentTimeMillis();
+                                clientThread.makeRequest(ConnectionState.READ);
+                                System.out.println("Сделал запрос READ");
+                            } else System.out.println("Спам запроса");
                         }
+                       /* else if(key.isWritable()){
+                            ClientThread clientThread = (ClientThread) key.attachment();
+                            executor.execute(clientThread);
+                        }*/
                     }
                 }
             }

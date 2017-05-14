@@ -14,6 +14,7 @@ import java.util.concurrent.*;
  * Created by Mugenor on 11.05.2017.
  */
 public class ClientThread extends Thread {
+    long correctRequest=0;
     private Message message;
     private SocketChannel channel;
     private SelectionKey key;
@@ -64,9 +65,11 @@ public class ClientThread extends Thread {
                 while (isConnected) {
                     switch (requests.take()) {
                         case ConnectionState.READ:
+                            System.out.println("In run READING");
                             read();
                             break;
                         case ConnectionState.NEED_DATA | ConnectionState.NEW_DATA:
+                            System.out.println("In run SENDINGDATA");
                             sendData();
                             break;
                         case ConnectionState.DISCONNECT:
@@ -88,7 +91,7 @@ public class ClientThread extends Thread {
             int i = channel.read(bb);
             bb.flip();
             byte size = bb.get();
-            System.out.println(size + "\n");
+            System.out.println(size);
             for(int j=1;j<i;j++){
                 mesIn.append((char)bb.get());
             }
@@ -104,7 +107,9 @@ public class ClientThread extends Thread {
             message = gson.fromJson(mesIn.toString(), Message.class);
             System.out.println("Объект создан");
             makeRequest(message.getState());
+            System.out.println(requests.size());
             System.out.println("Запрос сделан");
+            key.interestOps(SelectionKey.OP_WRITE);
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -139,10 +144,12 @@ public class ClientThread extends Thread {
             message.setState(ConnectionState.NEW_DATA);
             message.setData(list);
             String mes = gson.toJson(message);
-            ByteBuffer buf = ByteBuffer.allocate(mes.length() + 1);
-            buf.put((byte)mes.length());
-            buf.put(mes.getBytes());
+           /* ByteBuffer buf = ByteBuffer.allocate(mes.getBytes().length + 1);
+            buf.put((byte)mes.getBytes().length);
+            buf.put(mes.getBytes());*/
+            ByteBuffer buf = ByteBuffer.wrap(mes.getBytes());
             channel.write(buf);
+            key.interestOps(SelectionKey.OP_READ);
             System.out.println("Сделаль");
     }
 }
