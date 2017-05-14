@@ -1,8 +1,5 @@
 import java.io.*;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -32,6 +29,7 @@ public class Main {
     private static Selector selector;
     static CachedRowSet normalHumans;
     static CachedRowSet thoughts;
+    static ServerSocket secondServerSocket;
     public static Selector getSelector(){
         return selector;
     }
@@ -61,9 +59,10 @@ public class Main {
         }
         //Открытие канала сервера и его регистрирование в селекторе
         try {
+            secondServerSocket = new ServerSocket();
+            secondServerSocket.bind(new InetSocketAddress(InetAddress.getLocalHost(), 1001));
             server = ServerSocketChannel.open();
             server.configureBlocking(false);
-
             server.socket().bind(new InetSocketAddress(InetAddress.getLocalHost(), serverPort));
             serverKey = server.register(selector, SelectionKey.OP_ACCEPT);
         }catch (IOException e){
@@ -119,7 +118,7 @@ public class Main {
                         else if (key.isReadable()) {
                             ClientThread clientThread = (ClientThread) key.attachment();
                             System.out.println("Пытаюсь сделать запрос READ");
-                            if ((System.currentTimeMillis() - clientThread.correctRequest)>100) {
+                            if ((System.currentTimeMillis() - clientThread.correctRequest)>500) {
                                 clientThread.correctRequest=System.currentTimeMillis();
                                 clientThread.makeRequest(ConnectionState.READ);
                                 System.out.println("Сделал запрос READ");

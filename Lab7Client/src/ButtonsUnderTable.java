@@ -32,10 +32,12 @@ public class ButtonsUnderTable {
     public void delete(){
         if(collections.getSelectedRow()!=-1){
             Interface.setIsChanged(true);
+            Interface.message.getData().clear();
+            Interface.message.getData().add(coll.get(collections.getSelectedRow()));
+            Interface.message.setState(ConnectionState.NEW_DATA);
+            Interface.message.setTypeOfOperation(Message.delete);
             coll.remove(collections.getSelectedRow());
             collt.removeData(collections.getSelectedRow());
-            Interface.message.setData(coll);
-            Interface.message.setState(ConnectionState.NEW_DATA);
             Interface.sendMessage();}
     }
     public void edit(){

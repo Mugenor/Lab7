@@ -10,6 +10,9 @@ abstract public class Human implements Serializable {
     protected static final long serialVersionUID = 42L;
     protected Boolean troublesWithTheLaw=false;
     protected String name;
+    protected int id;
+    public int getId() {return id;}
+    public void setId(int id) {this.id = id;}
     public String getName(){
         return this.name;
     }

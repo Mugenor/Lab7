@@ -3,6 +3,7 @@ import classes.NormalHuman;
 import com.google.gson.Gson;
 
 import java.io.*;
+import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
@@ -34,6 +35,7 @@ public class ClientThread extends Thread {
         isConnected=true;
         bb = ByteBuffer.allocate(512);
         gson = new Gson();
+        new SecondConnection().start();
     }
     public ClientThread(Message message, SocketChannel channel, SelectionKey key){
         this.message=message;
@@ -45,6 +47,7 @@ public class ClientThread extends Thread {
         isConnected=true;
         bb = ByteBuffer.allocate(512);
         gson = new Gson();
+        new SecondConnection().start();
     }
     public long getCurrentMessageID(){return currentMessageID;}
     public void makeRequest(byte i) throws InterruptedException{
@@ -69,11 +72,13 @@ public class ClientThread extends Thread {
                             read();
                             break;
                         case ConnectionState.NEED_DATA:
+                            System.out.println(requests.size());
                             System.out.println("In run SENDINGDATA");
                             sendData();
                             break;
                         case ConnectionState.NEW_DATA:
                             System.out.println("In NEW_DATA");
+                            key.interestOps(SelectionKey.OP_READ);
                             break;
                         case ConnectionState.DISCONNECT:
                             disconnect();
@@ -147,9 +152,6 @@ public class ClientThread extends Thread {
             message.setState(ConnectionState.NEW_DATA);
             message.setData(list);
             String mes = gson.toJson(message);
-           /* ByteBuffer buf = ByteBuffer.allocate(mes.getBytes().length + 1);
-            buf.put((byte)mes.getBytes().length);
-            buf.put(mes.getBytes());*/
             ByteBuffer buf = ByteBuffer.wrap(mes.getBytes());
             channel.write(buf);
             key.interestOps(SelectionKey.OP_READ);

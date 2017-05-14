@@ -212,11 +212,18 @@ public class EditWindow extends JFrame {
             nh.setName(field.getText());
             nh.setAge(snm.getNumber().longValue());
             nh.setTroublesWithTheLaw(True.isSelected());
+            Interface.message.getData().clear();
+            Interface.message.getData().add(nh);
             if(numberRow==(-1)) {collections.addData(nh);
-                linkedList.add(nh);}
-            else
+                linkedList.add(nh);
+                Interface.message.setTypeOfOperation(Message.add);}
+            else {
                 collections.editData(nh, numberRow);
+                Interface.message.setTypeOfOperation(Message.change);
+            }
             ee.doOnExit();
+            Interface.message.setState(ConnectionState.NEW_DATA);
+            Interface.sendMessage();
             dispose();
         }catch(KarlsonNameException exc){
             if(exc.getMessage().equals("empty"))excNameLabel.setText("Write name of NormalHuman");

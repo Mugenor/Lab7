@@ -328,6 +328,7 @@ public class Interface{
     }
     public static void main(String[] args){
         try {
+            Socket secondSocket = new Socket(InetAddress.getLocalHost(),1001);
             gson = new Gson();
             socket = new Socket(InetAddress.getLocalHost(), 1000);
             socketOS = socket.getOutputStream();

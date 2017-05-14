@@ -83,6 +83,11 @@ public class ButtonsWithCommands {
                                 Interface.setIsChanged(true);
                                 coll.remove(nh);
                                 System.out.println(coll);
+                                Interface.message.getData().clear();
+                                Interface.message.getData().add(nh);
+                                Interface.message.setTypeOfOperation(Message.delete);
+                                Interface.message.setState(ConnectionState.NEW_DATA);
+                                Interface.sendMessage();
                                 jf.dispose();
                                 openedRemoveWindow=false;} else throw new ArrayIndexOutOfBoundsException();}
                             catch (NullPointerException | KarlsonNameException exc){
@@ -103,7 +108,7 @@ public class ButtonsWithCommands {
             });
     }
     public void save() {
-        Thread t= new Thread(new Runnable() {
+       /* Thread t= new Thread(new Runnable() {
             @Override
             public void run() {
                 File f = new File(Interface.getFile());
@@ -144,7 +149,7 @@ public class ButtonsWithCommands {
                 }
             }
         });
-        t.start();
+        t.start();*/
     }
     public void addPerson(){
         if(!openedAddWindow) {
@@ -179,16 +184,18 @@ public class ButtonsWithCommands {
                     try {
                         NormalHuman nh = Interface.StringToObject(str);
                         String[] strArray = {nh.getName(), nh.getAge().toString(), nh.getTroublesWithTheLaw().toString()};
+                        System.out.println("Old coll: " + coll);
                         collt.addData(strArray);
                         coll.add(nh);
-                        CollectTable collt1 = new CollectTable();
-                        for (int i = 0; i < coll.size(); i++) {
-                            String[] obj = {coll.get(i).getName(), coll.get(i).getAge().toString(), coll.get(i).getTroublesWithTheLaw().toString()};
-                            collt1.addData(obj);
-                        }
-                        collections.setModel(collt1);
+                        System.out.println("New coll: " + coll);
+                        System.out.println(coll.indexOf(nh)+ " of " + coll.size()+": " + nh);
                         Interface.setIsChanged(true);
-                        openedAddJsonWindow=false;
+                        openedAddJsonWindow = false;
+                        Interface.message.getData().clear();
+                        Interface.message.getData().add(nh);
+                        Interface.message.setTypeOfOperation(Message.add);
+                        Interface.message.setState(ConnectionState.NEW_DATA);
+                        Interface.sendMessage();
                         jf.dispose();
                     } catch (NullPointerException | KarlsonNameException exc) {
                         alabel.setText("Wrong NormalHuman!");
