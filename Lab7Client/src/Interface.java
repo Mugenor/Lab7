@@ -143,6 +143,7 @@ public class Interface{
                 but.delete();
                 message.setData(coll);
                 message.setState(ConnectionState.NEW_DATA);
+                sendMessage();
             }
         });
         showThoughtsButton.addActionListener(new ActionListener() {
