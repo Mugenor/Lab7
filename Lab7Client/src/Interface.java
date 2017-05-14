@@ -3,20 +3,25 @@ import java.awt.*;
 import java.awt.event.*;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.util.*;
 import java.io.*;
 import java.util.List;
 import classes.*;
-import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream;
+import com.google.gson.Gson;
+import com.sun.org.apache.xpath.internal.SourceTree;
 import org.json.simple.*;
 
 public class Interface{
+    static DataOutputStream dos;
+    static DataInputStream dis;
     static Socket socket;
     static InputStream socketIS;
     static OutputStream socketOS;
-    static ObjectInputStream  ois;
-    static ObjectOutputStream oos;
     static Message message;
+    static Gson gson;
+    static boolean connected=false;
     private static boolean isChanged = false;
     private static JFrame jf = new JFrame();
     private static JPanel panelu = new JPanel();
@@ -105,7 +110,9 @@ public class Interface{
                     public void run() {
                         if(isChanged)
                             cf.init();
-                        else System.exit(0);
+                        else {
+                            System.exit(0);
+                        }
                     }
                 });
             }
@@ -140,6 +147,9 @@ public class Interface{
             @Override
             public void actionPerformed(ActionEvent e) {
                 but.delete();
+                message.setData(coll);
+                message.updateID();
+                message.setState(ConnectionState.NEW_DATA);
             }
         });
         showThoughtsButton.addActionListener(new ActionListener() {
@@ -298,29 +308,61 @@ public class Interface{
         return nh;
 
     }
-    public static void writeMessage()throws IOException{
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream objectOutputStream = new ObjectOutputStream(baos);
-        objectOutputStream.writeObject(message);
-        socketOS.write((byte)Math.ceil((double)baos.size()/2048.0));
-        oos.writeObject(message);
-    }
+
 
     public static void main(String[] args){
         try {
+           /* Selector selector = Selector.open();
+            socket.register(selector, SelectionKey.OP_CONNECT);
+            socket.bind(new InetSocketAddress(InetAddress.getLocalHost(), 1000));
+            connected=true;
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ObjectOutputStream oos = new ObjectOutputStream(baos);
+            bb = ByteBuffer.allocate(2048);
+            while(connected){
+                selector.select();
+                for(SelectionKey key: selector.selectedKeys()){
+                    if(key.isConnectable()){
+                        System.out.println("Пробую приконектится");
+                        socket.finishConnect();
+                        key.interestOps(SelectionKey.OP_WRITE);
+                        System.out.println("Приконентился");
+                    }
+                    else if(key.isWritable()){
+                        SocketChannel channel = (SocketChannel) key.channel();
+                        channel.write(ByteBuffer.wrap(baos.toByteArray()));
+                        key.interestOps(SelectionKey.OP_READ);
+                    }
+                    else if(key.isReadable()){
+
+                    }
+                }
+            }*/
+            gson = new Gson();
             socket = new Socket(InetAddress.getLocalHost(), 1000);
-            socketIS = socket.getInputStream();
             socketOS = socket.getOutputStream();
-            oos = new ObjectOutputStream(socketOS);
-            System.out.println("oos");
-            ois = new ObjectInputStream(socketIS);
-            System.out.println("ois");
+            socketIS = socket.getInputStream();
+            dis = new DataInputStream(socketIS);
+            dos = new DataOutputStream(socketOS);
+            System.out.println("Потоки созданы");
             message = new Message(ConnectionState.NEED_DATA);
             message.clearData();
-            System.out.println("Пытаюсь отправить сообщение");
-            writeMessage();
-            message = (Message) ois.readObject();
-            System.out.println("Пытаюсь принять сообщение");
+            String mesOut = gson.toJson(message);
+            byte sizeOut = (byte) Math.ceil((double)(mesOut.length()+1)/(double)512);
+            byte[] buf = new byte[mesOut.length()+1];
+            buf[0]=sizeOut;
+            System.out.println(sizeOut);
+            System.out.println(mesOut.getBytes().length + " : " + mesOut.length());
+            System.arraycopy(mesOut.getBytes(),0, buf,1, mesOut.length());
+            dos.write(buf);
+            StringBuilder mesIn = new StringBuilder();
+            System.out.println("Zhdu");
+            int size = dis.readUnsignedByte();
+            System.out.println("Dozhdalsya");
+            for(int i=0;i<size;i++){
+                mesIn.append(dis.readChar());
+            }
+            message =  gson.fromJson(mesIn.toString(), Message.class);
             coll = message.getData();
             SwingUtilities.invokeLater(() -> new Interface());
         }catch(Exception e){

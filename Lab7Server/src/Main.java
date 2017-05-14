@@ -32,6 +32,9 @@ public class Main {
     private static Selector selector;
     static CachedRowSet normalHumans;
     static CachedRowSet thoughts;
+    public static Selector getSelector(){
+        return selector;
+    }
     public static void main(String args[]){
         try {
             //Определение хоста
@@ -61,7 +64,7 @@ public class Main {
             server = ServerSocketChannel.open();
             server.configureBlocking(false);
 
-            server.bind(new InetSocketAddress(InetAddress.getLocalHost(), serverPort));
+            server.socket().bind(new InetSocketAddress(InetAddress.getLocalHost(), serverPort));
             serverKey = server.register(selector, SelectionKey.OP_ACCEPT);
         }catch (IOException e){
             System.out.println("Не удаётся открыть канал сервера");
@@ -101,23 +104,24 @@ public class Main {
                         SelectionKey key = (SelectionKey) it.next();
                         it.remove();
                         //Если кто-то подключился, то регистрируем в селекторе и записываем в него массив людей
-                        if (key.isAcceptable()) {
+                        if(!key.isValid())continue;
+                        else if (key.isAcceptable()) {
                             SocketChannel newChannel = server.accept();
                             newChannel.configureBlocking(false);
                             SelectionKey newKey = newChannel.register(selector, SelectionKey.OP_READ);
                             //Создание отдельного потока для пользователя и связывание его с ключом
                             ClientThread newClientThread = new ClientThread(newChannel, newKey);
+                            executor.execute(newClientThread);
                             newKey.attach(newClientThread);
                             System.out.println("Новое соединение: " + newChannel.getLocalAddress());
                         }
                         //Чтение из каналов
                         else if (key.isReadable()) {
                             //запуск потока по ключу
-                            System.out.println("Читать");
                             ClientThread clientThread = (ClientThread) key.attachment();
+                            System.out.println("Пытаюсь сделать запрос READ");
                             clientThread.makeRequest(ConnectionState.READ);
-                            executor.execute(clientThread);
-                            System.out.println("пробую прочитать");
+                            System.out.println("Сделал запрос READ");
                         }
                     }
                 }

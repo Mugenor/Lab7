@@ -1,5 +1,6 @@
 import classes.KarlsonNameException;
 import classes.NormalHuman;
+import com.google.gson.Gson;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -20,13 +21,18 @@ public class ClientThread extends Thread {
     private long currentMessageID;
     private boolean needData;
     private boolean isConnected;
+    private ByteBuffer bb;
+    private Gson gson;
     public ClientThread(SocketChannel channel , SelectionKey key){
+        message = new Message(ConnectionState.NEW_DATA);
         this.channel=channel;
         this.key = key;
         this.requests = new ArrayBlockingQueue<>(5);
         this.currentMessageID=-1;
         needData=false;
         isConnected=true;
+        bb = ByteBuffer.allocate(512);
+        gson = new Gson();
     }
     public ClientThread(Message message, SocketChannel channel, SelectionKey key){
         this.message=message;
@@ -36,6 +42,8 @@ public class ClientThread extends Thread {
         this.requests = new ArrayBlockingQueue<>(5);
         needData=false;
         isConnected=true;
+        bb = ByteBuffer.allocate(512);
+        gson = new Gson();
     }
     public long getCurrentMessageID(){return currentMessageID;}
     public void makeRequest(byte i) throws InterruptedException{
@@ -52,15 +60,14 @@ public class ClientThread extends Thread {
     }
     public void run(){
         try {
-            while (!requests.isEmpty()) {
-                System.out.println("Кручусь");
-                synchronized (this) {
+            synchronized (this) {
+                while (isConnected) {
                     switch (requests.take()) {
                         case ConnectionState.READ:
                             read();
                             break;
-                        case ConnectionState.NEED_DATA:
-                            sentData();
+                        case ConnectionState.NEED_DATA | ConnectionState.NEW_DATA:
+                            sendData();
                             break;
                         case ConnectionState.DISCONNECT:
                             disconnect();
@@ -70,31 +77,37 @@ public class ClientThread extends Thread {
                     }
                 }
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
     private void read(){
-    /*    try {
-            ByteBuffer size = ByteBuffer.allocate(1);
-            channel.read(size);
-            byte j = size.get(0);
-            System.out.println(j+ " : " +2048*j);
-            ByteBuffer mes = ByteBuffer.allocate(2048 * j);
-            channel.read(mes);
-            ByteArrayInputStream bais = new ByteArrayInputStream(mes.array());
-            ObjectInputStream ois = new ObjectInputStream(bais);
-            message = (Message) ois.readObject();
-            if (currentMessageID != message.getID()) {
-                currentMessageID = message.getID();
-                requests.put(message.getState());
+        try {
+            StringBuilder mesIn = new StringBuilder();
+            bb.clear();
+            int i = channel.read(bb);
+            bb.flip();
+            byte size = bb.get();
+            System.out.println(size + "\n");
+            for(int j=1;j<i;j++){
+                mesIn.append((char)bb.get());
             }
-            ois.close();
-            System.out.println("Закончил чтение");
+            for(int k=1;k<size;k++){
+                bb.clear();
+                int l = channel.read(bb);
+                bb.flip();
+                for(int j=0;j<l;j++){
+                    mesIn.append((char)bb.get());
+                }
+            }
+            System.out.println("Строка" + mesIn);
+            message = gson.fromJson(mesIn.toString(), Message.class);
+            System.out.println("Объект создан");
+            makeRequest(message.getState());
+            System.out.println("Запрос сделан");
         }catch (Exception e){
             e.printStackTrace();
-        }*/
+        }
     }
     private void disconnect(){
         try {
@@ -102,14 +115,13 @@ public class ClientThread extends Thread {
             key.cancel();
             isConnected=false;
             requests.put(ConnectionState.FINAL_ITERATE);
-        }catch (InterruptedException | IOException e){
+            System.out.println("Disconnected");
+        }catch (Exception e){
             e.printStackTrace();
         }
     }
-    private void sentData() throws SQLException, IOException, KarlsonNameException{
+    private void sendData() throws SQLException, IOException, KarlsonNameException{
             LinkedList<NormalHuman> list = new LinkedList<>();
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ObjectOutputStream oos = new ObjectOutputStream(baos);
             while (Main.normalHumans.next()) {
                 NormalHuman nh = new NormalHuman();
                 nh.setName(Main.normalHumans.getString("name"));
@@ -126,10 +138,11 @@ public class ClientThread extends Thread {
             Main.normalHumans.beforeFirst();
             message.setState(ConnectionState.NEW_DATA);
             message.setData(list);
-            message.updateID();
-            oos.writeObject(message);
-            channel.write(ByteBuffer.wrap(baos.toByteArray()));
-            oos.flush();
-            oos.close();
+            String mes = gson.toJson(message);
+            ByteBuffer buf = ByteBuffer.allocate(mes.length() + 1);
+            buf.put((byte)mes.length());
+            buf.put(mes.getBytes());
+            channel.write(buf);
+            System.out.println("Сделаль");
     }
 }
