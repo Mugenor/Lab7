@@ -141,9 +141,6 @@ public class Interface{
             @Override
             public void actionPerformed(ActionEvent e) {
                 but.delete();
-                message.setData(coll);
-                message.setState(ConnectionState.NEW_DATA);
-                sendMessage();
             }
         });
         showThoughtsButton.addActionListener(new ActionListener() {

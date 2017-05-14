@@ -33,7 +33,10 @@ public class ButtonsUnderTable {
         if(collections.getSelectedRow()!=-1){
             Interface.setIsChanged(true);
             coll.remove(collections.getSelectedRow());
-            collt.removeData(collections.getSelectedRow());}
+            collt.removeData(collections.getSelectedRow());
+            Interface.message.setData(coll);
+            Interface.message.setState(ConnectionState.NEW_DATA);
+            Interface.sendMessage();}
     }
     public void edit(){
         if(collections.getSelectedRow()!=-1&&!openedEditWindow) {

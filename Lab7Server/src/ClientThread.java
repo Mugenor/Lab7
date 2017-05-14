@@ -73,6 +73,7 @@ public class ClientThread extends Thread {
                             sendData();
                             break;
                         case ConnectionState.NEW_DATA:
+                            System.out.println("In NEW_DATA");
                             break;
                         case ConnectionState.DISCONNECT:
                             disconnect();
