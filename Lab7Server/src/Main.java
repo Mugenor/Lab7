@@ -117,7 +117,6 @@ public class Main {
                         }
                         //Чтение из каналов
                         else if (key.isReadable()) {
-                            //запуск потока по ключу
                             ClientThread clientThread = (ClientThread) key.attachment();
                             System.out.println("Пытаюсь сделать запрос READ");
                             if ((System.currentTimeMillis() - clientThread.correctRequest)>300) {
@@ -126,10 +125,6 @@ public class Main {
                                 System.out.println("Сделал запрос READ");
                             } else System.out.println("Спам запроса");
                         }
-                       /* else if(key.isWritable()){
-                            ClientThread clientThread = (ClientThread) key.attachment();
-                            executor.execute(clientThread);
-                        }*/
                     }
                 }
             }

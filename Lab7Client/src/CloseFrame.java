@@ -40,6 +40,9 @@ public class CloseFrame extends JFrame {
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     bwc.save();
+                    Interface.message.setState(ConnectionState.DISCONNECT);
+                    Interface.message.clearData();
+                    Interface.sendMessage();
                     System.exit(0);
                 }
             });

@@ -105,16 +105,10 @@ public class Interface{
         jf.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
-                SwingUtilities.invokeLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        if(isChanged)
-                            cf.init();
-                        else {
-                            System.exit(0);
-                        }
-                    }
-                });
+                message.clearData();
+                message.setState(ConnectionState.DISCONNECT);
+                sendMessage();
+                System.exit(0);
             }
         });
         panelu.setBackground(Color.white);
@@ -309,35 +303,34 @@ public class Interface{
 
     }
 
+    public static void getMessage(){
+        try {
+            StringBuilder mesIn = new StringBuilder();
+            mesIn.append((char) dis.read());
+            while (dis.available() != 0) {
+                mesIn.append((char) dis.read());
+            }
+            System.out.println(mesIn);
+            message = gson.fromJson(mesIn.toString(), Message.class);
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+    }
 
+    public static void sendMessage(){
+        try {
+            String mesOut = gson.toJson(message);
+            byte sizeOut = (byte) Math.ceil((double) (mesOut.length() + 1) / (double) 512);
+            byte[] buf = new byte[mesOut.length() + 1];
+            buf[0] = sizeOut;
+            System.arraycopy(mesOut.getBytes(), 0, buf, 1, mesOut.length());
+            dos.write(buf);
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+    }
     public static void main(String[] args){
         try {
-           /* Selector selector = Selector.open();
-            socket.register(selector, SelectionKey.OP_CONNECT);
-            socket.bind(new InetSocketAddress(InetAddress.getLocalHost(), 1000));
-            connected=true;
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ObjectOutputStream oos = new ObjectOutputStream(baos);
-            bb = ByteBuffer.allocate(2048);
-            while(connected){
-                selector.select();
-                for(SelectionKey key: selector.selectedKeys()){
-                    if(key.isConnectable()){
-                        System.out.println("Пробую приконектится");
-                        socket.finishConnect();
-                        key.interestOps(SelectionKey.OP_WRITE);
-                        System.out.println("Приконентился");
-                    }
-                    else if(key.isWritable()){
-                        SocketChannel channel = (SocketChannel) key.channel();
-                        channel.write(ByteBuffer.wrap(baos.toByteArray()));
-                        key.interestOps(SelectionKey.OP_READ);
-                    }
-                    else if(key.isReadable()){
-
-                    }
-                }
-            }*/
             gson = new Gson();
             socket = new Socket(InetAddress.getLocalHost(), 1000);
             socketOS = socket.getOutputStream();
@@ -347,21 +340,8 @@ public class Interface{
             System.out.println("Потоки созданы");
             message = new Message(ConnectionState.NEED_DATA);
             message.clearData();
-            String mesOut = gson.toJson(message);
-            byte sizeOut = (byte) Math.ceil((double)(mesOut.length()+1)/(double)512);
-            byte[] buf = new byte[mesOut.length()+1];
-            buf[0]=sizeOut;
-            System.out.println(sizeOut);
-            System.out.println(mesOut.getBytes().length + " : " + mesOut.length());
-            System.arraycopy(mesOut.getBytes(),0, buf,1, mesOut.length());
-            dos.write(buf);
-            StringBuilder mesIn = new StringBuilder();
-            mesIn.append((char)dis.read());
-            while(dis.available()!=0) {
-                mesIn.append((char) dis.read());
-            }
-            System.out.println(mesIn);
-            message =  gson.fromJson(mesIn.toString(), Message.class);
+            sendMessage();
+            getMessage();
             coll = message.getData();
             SwingUtilities.invokeLater(() -> new Interface());
         }catch(Exception e){
