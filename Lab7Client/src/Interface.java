@@ -315,10 +315,10 @@ public class Interface{
     public static void sendMessage(){
         try {
             String mesOut = gson.toJson(message);
-            byte sizeOut = (byte) Math.ceil((double) (mesOut.length() + 1) / (double) 512);
-            byte[] buf = new byte[mesOut.length() + 1];
+            byte sizeOut = (byte) Math.ceil((double) (mesOut.getBytes().length + 1) / (double) 512);
+            byte[] buf = new byte[mesOut.getBytes().length + 1];
             buf[0] = sizeOut;
-            System.arraycopy(mesOut.getBytes(), 0, buf, 1, mesOut.length());
+            System.arraycopy(mesOut.getBytes(), 0, buf, 1, mesOut.getBytes().length);
             dos.write(buf);
         }catch (IOException e){
             e.printStackTrace();

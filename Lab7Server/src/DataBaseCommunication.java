@@ -41,46 +41,48 @@ public class DataBaseCommunication {
         registerQuery(sql);
         return rowSet;
     }
-    public void Update(Message message){
+    public void update(Message message){
+        Connection connection = null;
         try {
             LinkedList<NormalHuman> NewData = message.getData();
-            Connection connection = pooledConnection.getConnection();
+            connection = pooledConnection.getConnection();
+            connection.setAutoCommit(false);
             Statement statement = connection.createStatement();
             if(message.getTypeOfOperation()==Message.change) {
                 statement.execute("update normalhuman set name = '" + NewData.get(0).getName() + "', age = " + NewData.get(0).getAge() + ", troubleswiththelaw = " + NewData.get(0).getTroublesWithTheLaw() + " where id = " + NewData.get(0).getId() + ";");
                 statement.execute("delete from thoughts where id=" + NewData.get(0).getId()+";");
-                if(NewData.get(0).getThoughtsCount()!=0) {
-                    StringBuilder sql = new StringBuilder();
-                    sql.append("insert into thoughts values('" + NewData.get(0).getThoughts(0) + "', " + NewData.get(0).getId() + " )");
-                    for (int i = 1; i < NewData.get(0).countOfThoughts(); i++) {
-                        sql.append(",('" + NewData.get(0).getThoughts(i) + "', " + NewData.get(0).getId() + " )");
-                    }
-                    sql.append(";");
-                    System.out.println(sql);
-                    statement.execute(sql.toString());
+                StringBuilder sql = new StringBuilder();
+                sql.append("insert into thoughts values('"+NewData.get(0).getThoughts(0) +"', "+ NewData.get(0).getId() +" )");
+                for(int i=1;i<NewData.get(0).countOfThoughts();i++){
+                    sql.append(",('"+NewData.get(0).getThoughts(i) +"', "+ NewData.get(0).getId() +" )");
                 }
+                sql.append(";");
+                System.out.println(sql);
+                statement.execute(sql.toString());
             }
             else if(message.getTypeOfOperation()==Message.add) {
                 statement.execute("insert into normalhuman values (" + NewData.get(0).getId() + ", '" + NewData.get(0).getName() + "'," + NewData.get(0).getAge() + "," + NewData.get(0).getTroublesWithTheLaw() + ");");
-                if(NewData.get(0).getThoughtsCount()!=0) {
-                    StringBuilder sql = new StringBuilder();
-                    sql.append("insert into thoughts values('" + NewData.get(0).getThoughts(0) + "', " + NewData.get(0).getId() + " )");
-                    for (int i = 1; i < NewData.get(0).countOfThoughts(); i++) {
-                        sql.append(",('" + NewData.get(0).getThoughts(i) + "', " + NewData.get(0).getId() + " )");
-                    }
-                    sql.append(";");
-                    statement.execute(sql.toString());
+                StringBuilder sql = new StringBuilder();
+                sql.append("insert into thoughts values('"+NewData.get(0).getThoughts(0) +"', "+ NewData.get(0).getId() +" )");
+                for(int i=1;i<NewData.get(0).countOfThoughts();i++){
+                    sql.append(",('"+NewData.get(0).getThoughts(i) +"', "+ NewData.get(0).getId() +" )");
                 }
+                sql.append(";");
+                statement.execute(sql.toString());
             }
             else if(message.getTypeOfOperation()==Message.delete) {
                 statement.execute("delete from thoughts where id=" + NewData.get(0).getId() + ";");
-                if(NewData.get(0).getThoughtsCount()!=0) {
-                    statement.execute("delete from normalhuman where id = " + NewData.get(0).getId() + ";");
-                }
+                statement.execute("delete from normalhuman where id = " + NewData.get(0).getId() + ";");
             }
+            connection.commit();
+            connection.setAutoCommit(true);
             statement.close();
             connection.close();
-        }catch(SQLException e){e.printStackTrace();}
+        }catch(Exception e){
+            try {
+                connection.rollback();
+            }catch (SQLException ez){ez.printStackTrace();}
+        }
     }
     public CachedRowSet getRowSet(){
         return rowSet;

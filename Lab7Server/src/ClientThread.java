@@ -6,7 +6,6 @@ import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-import java.nio.charset.Charset;
 import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.concurrent.*;
@@ -89,7 +88,7 @@ public class ClientThread extends Thread {
     }
     private void update(){
         try{
-            Main.getDbc().Update(message);
+            Main.getDbc().update(message);
             synchronized (message){
                 synchronized (secondConnection) {
                     Main.threadHandler.sendMessage(message, secondConnection);
@@ -118,8 +117,7 @@ public class ClientThread extends Thread {
                 }
             }
             System.out.println("Строка" + mesIn);
-            String string = new String(mesIn.toString().getBytes(), "UTF8");
-            message = gson.fromJson(string, Message.class);
+            message = gson.fromJson(mesIn.toString(), Message.class);
             System.out.println("Объект создан");
             makeRequest(message.getState());
             System.out.println(requests.size());
@@ -168,9 +166,7 @@ public class ClientThread extends Thread {
             message.setData(list);
             message.maxID=Main.maxID;
             String mes = gson.toJson(message);
-           /* ByteBuffer buf = ByteBuffer.allocate(mes.getBytes().length + 1);
-            buf.put((byte)mes.getBytes().length);
-            buf.put(mes.getBytes());*/
+            System.out.println(mes);
             ByteBuffer buf = ByteBuffer.wrap(mes.getBytes());
             channel.write(buf);
             key.interestOps(SelectionKey.OP_READ);
