@@ -6,6 +6,7 @@ import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import java.nio.charset.Charset;
 import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.concurrent.*;
@@ -19,29 +20,31 @@ public class ClientThread extends Thread {
     private SocketChannel channel;
     private SelectionKey key;
     private BlockingQueue<Byte> requests;
-    private boolean needData;
     private boolean isConnected;
     private ByteBuffer bb;
     private Gson gson;
-    public ClientThread(SocketChannel channel , SelectionKey key){
-        message = new Message(ConnectionState.NEW_DATA);
+    private SecondConnection secondConnection;
+    private boolean isMineData;
+    public ClientThread(SocketChannel channel , SelectionKey key, SecondConnection secondConnection){
+        this.message = new Message(ConnectionState.NEW_DATA);
         this.channel=channel;
         this.key = key;
         this.requests = new ArrayBlockingQueue<>(5);
-        needData=false;
-        isConnected=true;
-        bb = ByteBuffer.allocate(512);
-        gson = new Gson();
+        this.isConnected=true;
+        this.bb = ByteBuffer.allocate(512);
+        this.gson = new Gson();
+        this.isMineData=false;
+        this.secondConnection = secondConnection;
     }
     public ClientThread(Message message, SocketChannel channel, SelectionKey key){
         this.message=message;
         this.channel = channel;
         this.key = key;
         this.requests = new ArrayBlockingQueue<>(5);
-        needData=false;
-        isConnected=true;
-        bb = ByteBuffer.allocate(512);
-        gson = new Gson();
+        this.isConnected=true;
+        this.bb = ByteBuffer.allocate(512);
+        this.gson = new Gson();
+        this.isMineData=false;
     }
     public void makeRequest(byte i) throws InterruptedException{
         requests.put(i);
@@ -87,6 +90,11 @@ public class ClientThread extends Thread {
     private void update(){
         try{
             Main.getDbc().Update(message);
+            synchronized (message){
+                synchronized (secondConnection) {
+                    Main.threadHandler.sendMessage(message, secondConnection);
+                }
+            }
             key.interestOps(SelectionKey.OP_READ);
         }catch(Exception e){e.printStackTrace();}
     }
@@ -110,7 +118,8 @@ public class ClientThread extends Thread {
                 }
             }
             System.out.println("Строка" + mesIn);
-            message = gson.fromJson(mesIn.toString(), Message.class);
+            String string = new String(mesIn.toString().getBytes(), "UTF8");
+            message = gson.fromJson(string, Message.class);
             System.out.println("Объект создан");
             makeRequest(message.getState());
             System.out.println(requests.size());
@@ -127,6 +136,9 @@ public class ClientThread extends Thread {
             channel.close();
             key.cancel();
             isConnected=false;
+            synchronized (Main.threadHandler) {
+                Main.threadHandler.removeConnection(secondConnection);
+            }
             requests.put(ConnectionState.FINAL_ITERATE);
             System.out.println("Disconnected");
         }catch (Exception e){

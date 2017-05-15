@@ -3,17 +3,15 @@ import java.awt.*;
 import java.awt.event.*;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
 import java.util.*;
 import java.io.*;
 import java.util.List;
 import classes.*;
 import com.google.gson.Gson;
-import com.sun.org.apache.xpath.internal.SourceTree;
 import org.json.simple.*;
 
 public class Interface{
+    static Socket secondSocket;
     static DataOutputStream dos;
     static DataInputStream dis;
     static Socket socket;
@@ -330,6 +328,7 @@ public class Interface{
         try {
             gson = new Gson();
             socket = new Socket(InetAddress.getLocalHost(), 1000);
+            secondSocket = new Socket(InetAddress.getLocalHost(), 1001);
             socketOS = socket.getOutputStream();
             socketIS = socket.getInputStream();
             dis = new DataInputStream(socketIS);
@@ -341,6 +340,7 @@ public class Interface{
             sendMessage();
             getMessage();
             coll = new LinkedList<>(message.getData());
+            new AnotherConnection(secondSocket, coll, collt).start();
             SwingUtilities.invokeLater(() -> new Interface());
         }catch(Exception e){
             e.printStackTrace();

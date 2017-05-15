@@ -16,7 +16,13 @@ public class Message implements Serializable {
     public static final byte add = 1;
     public static final byte change = 2;
     public void setTypeOfOperation(byte typeOfOperation) {this.typeOfOperation = typeOfOperation;}
-    public int getTypeOfOperation() {return typeOfOperation;}
+    public byte getTypeOfOperation() {return typeOfOperation;}
+    public Message(Message message){
+        this.state = message.getState();
+        this.data = new LinkedList<>(message.getData());
+        this.typeOfOperation = message.getTypeOfOperation();
+        this.maxID = message.maxID;
+    }
     public Message(byte state, LinkedList<NormalHuman> data){
         this.state=state;
         this.data=data;

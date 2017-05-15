@@ -1,0 +1,75 @@
+import classes.NormalHuman;
+import com.google.gson.Gson;
+import sun.awt.image.ImageWatched;
+
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.net.Socket;
+import java.util.LinkedList;
+
+/**
+ * Created by Mugenor on 15.05.2017.
+ */
+public class AnotherConnection extends Thread {
+    private Socket socket;
+    private DataInputStream dis;
+    private Gson gson;
+    private Message message;
+    private LinkedList<NormalHuman> list;
+    private CollectTable collt;
+    public AnotherConnection(Socket socket, LinkedList<NormalHuman> list, CollectTable collt)throws IOException{
+        this.socket = socket;
+        dis = new DataInputStream(socket.getInputStream());
+        gson = new Gson();
+        this.list = list;
+        this.collt = collt;
+    }
+    public void run(){
+        try {
+            while (true) {
+                StringBuilder mesIn = new StringBuilder();
+                mesIn.append((char) dis.read());
+                while (dis.available() != 0) {
+                    mesIn.append((char) dis.read());
+                }
+                System.out.println(mesIn);
+                message = gson.fromJson(mesIn.toString(), Message.class);
+                if(message.getTypeOfOperation() == Message.add){
+                    synchronized (list){
+                        synchronized (collt){
+                            list.add(message.getData().get(0));
+                            collt.addData(message.getData().get(0));
+                        }
+                    }
+                }
+                else if (message.getTypeOfOperation() == Message.delete){
+                    synchronized (list){
+                        synchronized (collt){
+                            collt.removeData(list.indexOf(message.getData().get(0)));
+                            list.remove(message.getData().get(0));
+                        }
+                    }
+                }
+                else if(message.getTypeOfOperation() == Message.change){
+                    synchronized (list){
+                        synchronized (collt){
+                            boolean notChanged = true;
+                            int i = 0;
+                            while (notChanged){
+                                if(message.getData().get(0).getId()==list.get(i).getId()){
+                                    list.set(i, message.getData().get(0));
+                                    collt.editData(message.getData().get(0), i);
+                                    notChanged=false;
+                                }
+                                if(i>list.size())notChanged=false;
+                                i++;
+                            }
+                        }
+                    }
+                }
+            }
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+    }
+}

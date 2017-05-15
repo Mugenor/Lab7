@@ -66,6 +66,13 @@ public class CollectTable extends AbstractTableModel{
         data.add(numberRow,str);
         fireTableDataChanged();
     }
+    public void setData(int i, NormalHuman nh){
+        String[] str = new String[3];
+        str[0]=nh.getName();
+        str[1]=nh.getAge().toString();
+        str[2]=nh.getTroublesWithTheLaw().toString();
+
+    }
     public String toString(){
         String s="";
         for(int i =0 ;i<data.size();i++){

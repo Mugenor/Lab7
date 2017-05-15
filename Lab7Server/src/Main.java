@@ -1,8 +1,5 @@
 import java.io.*;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -30,6 +27,8 @@ public class Main {
     private static InetAddress host;
     private static DataBaseCommunication dbc;
     private static Selector selector;
+    static SecondThreadHandler threadHandler;
+    static ServerSocket secondServerSocket;
     static int maxID=-1;
     static CachedRowSet normalHumans;
     static CachedRowSet thoughts;
@@ -70,9 +69,10 @@ public class Main {
         try {
             server = ServerSocketChannel.open();
             server.configureBlocking(false);
-
             server.socket().bind(new InetSocketAddress(InetAddress.getLocalHost(), serverPort));
             serverKey = server.register(selector, SelectionKey.OP_ACCEPT);
+            secondServerSocket = new ServerSocket();
+            secondServerSocket.bind(new InetSocketAddress(InetAddress.getLocalHost(), serverPort+1));
         }catch (IOException e){
             System.out.println("Не удаётся открыть канал сервера");
             System.exit(1);
@@ -93,6 +93,7 @@ public class Main {
             e.printStackTrace();
             return;
         }
+        threadHandler = new SecondThreadHandler();
         ExecutorService executor = Executors.newFixedThreadPool(10);
         Runtime.getRuntime().addShutdownHook(new Thread(){
             public void run(){
@@ -123,7 +124,10 @@ public class Main {
                             newChannel.configureBlocking(false);
                             SelectionKey newKey = newChannel.register(selector, SelectionKey.OP_READ);
                             //Создание отдельного потока для пользователя и связывание его с ключом
-                            ClientThread newClientThread = new ClientThread(newChannel, newKey);
+                            SecondConnection secondConnection = new SecondConnection();
+                            secondConnection.connect(secondServerSocket.accept());
+                            threadHandler.addConnection(secondConnection);
+                            ClientThread newClientThread = new ClientThread(newChannel, newKey ,secondConnection);
                             executor.execute(newClientThread);
                             newKey.attach(newClientThread);
                             System.out.println("Новое соединение: " + newChannel.getLocalAddress());
