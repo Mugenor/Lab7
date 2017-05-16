@@ -30,9 +30,7 @@ public class ButtonsUnderTable {
         this.coll=coll;
     }
     public void delete(){
-        System.out.println("size: " + coll.size() + "\n"+coll);
-        System.out.println("trying get: " + collections.getSelectedRow());
-        if(collections.getSelectedRow()!=-1){
+        if((collections.getSelectedRow()!=-1) && !(Interface.notEditable.contains(collections.getSelectedRow()))){
             Interface.setIsChanged(true);
             Interface.message.getData().clear();
             Interface.message.getData().add(
