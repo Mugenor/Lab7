@@ -33,13 +33,12 @@ public class Main {
     static int maxID=-1;
     static CachedRowSet normalHumans;
     static CachedRowSet thoughts;
-    public static Selector getSelector(){
-        return selector;
-    }
+    static volatile boolean exc=false;
     public static DataBaseCommunication getDbc(){
         return dbc;
     }
     public static void main(String args[]){
+        System.out.println("Запуск сервера");
         try {
             //Определение хоста
             host=InetAddress.getLocalHost();
@@ -49,12 +48,12 @@ public class Main {
         }
         //Загрузка драйверов и подключение к бд
         try{dbc=new DataBaseCommunication(url, username, password,"org.postgresql.Driver");
-            System.out.println("Создан пулл соединений");
+            System.out.println("Создан пулл соединений к БД: "+ url);
         }catch (ClassNotFoundException e) {
-            System.out.println("Не получается найти драйвер для psql");
+            System.out.println("Ошибка: Не получается найти драйвер для psql");
             System.exit(1);
         }catch (SQLException e){
-            System.out.println("Не получается подключится к БД");
+            System.out.println("Ошибка: Не получается подключится к БД");
             System.exit(1);
         }
         ServerSocketChannel server = null;
@@ -63,7 +62,7 @@ public class Main {
         try{
             selector = SelectorProvider.provider().openSelector();
         }catch (IOException e){
-            System.out.println("Не удаётся открыть селектор");
+            System.out.println("Ошибка: Не удаётся открыть селектор");
             System.exit(1);
         }
         //Открытие канала сервера и его регистрирование в селекторе
@@ -75,11 +74,11 @@ public class Main {
             secondServerSocket = new ServerSocket();
             secondServerSocket.bind(new InetSocketAddress(InetAddress.getLocalHost(), serverPort+1));
         }catch (IOException e){
-            System.out.println("Не удаётся открыть канал сервера");
+            System.out.println("Ошибка: Не удаётся открыть канал сервера");
             System.exit(1);
         }catch (Exception e){
             e.printStackTrace();
-        }
+        };
         try{
            normalHumans = dbc.registerQueryAndGetRowSet("select * from normalhuman;");
            thoughts = dbc.registerQueryAndGetRowSet("select * from thoughts;");
@@ -88,9 +87,8 @@ public class Main {
                 if(id>maxID)maxID=id;
             }
             normalHumans.beforeFirst();
-            System.out.println(maxID);
         }catch (SQLException e){
-            System.out.println("Can't get info from DataBase");
+            System.out.println("Ошибка: Не получается выбрать данные из БД");
             e.printStackTrace();
             return;
         }
@@ -109,6 +107,7 @@ public class Main {
             }
         });
         //Цикл сервера
+        System.out.println("Ожидание входящих подключений...");
         try {
             while (true) {
                 selector.select();
@@ -131,17 +130,15 @@ public class Main {
                             ClientThread newClientThread = new ClientThread(newChannel, newKey ,secondConnection);
                             executor.execute(newClientThread);
                             newKey.attach(newClientThread);
-                            System.out.println("Новое соединение: " + newChannel.getLocalAddress());
+                            System.out.println("Новое соединение: " + newChannel.getRemoteAddress());
                         }
                         //Чтение из каналов
                         else if (key.isReadable()) {
                             ClientThread clientThread = (ClientThread) key.attachment();
-                            System.out.println("Пытаюсь сделать запрос READ");
                             if ((System.currentTimeMillis() - clientThread.correctRequest)>100) {
                                 clientThread.correctRequest=System.currentTimeMillis();
                                 clientThread.makeRequest(ConnectionState.READ);
-                                System.out.println("Сделал запрос READ");
-                            } else System.out.println("Спам запроса");
+                            }
                         }
                     }
                 }

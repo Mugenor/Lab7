@@ -2,6 +2,8 @@ import classes.*;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.*;
@@ -30,7 +32,7 @@ public class ButtonsUnderTable {
         this.coll=coll;
     }
     public void delete(){
-        if((collections.getSelectedRow()!=-1) && !(Interface.notEditable.contains(collections.getSelectedRow()))){
+        if(collections.getSelectedRow()!=-1 && !Interface.notEditable.contains(coll.get(collections.getSelectedRow()).getId())){
             Interface.setIsChanged(true);
             Interface.message.getData().clear();
             Interface.message.getData().add(
@@ -73,6 +75,9 @@ public class ButtonsUnderTable {
                     ew.setLocation((int)Interface.getFrameLocation().getX()-320,(int)Interface.getFrameLocation().getY());
                 }
             });
+        }
+        else if((collections.getSelectedRow()!=-1&&!openedEditWindow) && (Interface.notEditable.contains(coll.get(collections.getSelectedRow()).getId()))){
+            new Dialog("Данный человек уже редактируется!!!",Interface.getColor());
         }
     }
     public void showThoughts(){

@@ -20,17 +20,6 @@ public class Message implements Serializable {
     public static final byte notEdit = 3;
     public void setTypeOfOperation(byte typeOfOperation) {this.typeOfOperation = typeOfOperation;}
     public byte getTypeOfOperation() {return typeOfOperation;}
-    public Message(Message message){
-        this.state = message.getState();
-        this.data = new LinkedList<>(message.getData());
-        this.typeOfOperation = message.getTypeOfOperation();
-        this.maxID = message.maxID;
-        notEditable = new HashSet<>();
-    }
-    public Message(byte state, LinkedList<NormalHuman> data){
-        this.state=state;
-        this.data=data;
-    }
     public Message(byte state){
         this.state=state;
         data = new LinkedList<>();

@@ -24,7 +24,6 @@ public class ClientThread extends Thread {
     private ByteBuffer bb;
     private Gson gson;
     private SecondConnection secondConnection;
-    private boolean isMineData;
     public ClientThread(SocketChannel channel , SelectionKey key, SecondConnection secondConnection){
         this.message = new Message(ConnectionState.NEW_DATA);
         this.channel=channel;
@@ -33,30 +32,10 @@ public class ClientThread extends Thread {
         this.isConnected=true;
         this.bb = ByteBuffer.allocate(512);
         this.gson = new Gson();
-        this.isMineData=false;
         this.secondConnection = secondConnection;
-    }
-    public ClientThread(Message message, SocketChannel channel, SelectionKey key){
-        this.message=message;
-        this.channel = channel;
-        this.key = key;
-        this.requests = new ArrayBlockingQueue<>(5);
-        this.isConnected=true;
-        this.bb = ByteBuffer.allocate(512);
-        this.gson = new Gson();
-        this.isMineData=false;
     }
     public void makeRequest(byte i) throws InterruptedException{
         requests.put(i);
-    }
-    public void setMessage(Message message){
-        this.message = message;
-    }
-    public Message getMessage(){
-        return message;
-    }
-    public void setConnectionState(byte i){
-        message.setState(i);
     }
     public void run(){
         try {
@@ -64,15 +43,12 @@ public class ClientThread extends Thread {
                 while (isConnected) {
                     switch (requests.take()) {
                         case ConnectionState.READ:
-                            System.out.println("In run READING");
                             read();
                             break;
                         case ConnectionState.NEED_DATA:
-                            System.out.println("In run SENDINGDATA");
                             sendData();
                             break;
                         case ConnectionState.NEW_DATA:
-                            System.out.println("In NEW_DATA");
                             update();
                             break;
                         case ConnectionState.DISCONNECT:
@@ -84,23 +60,25 @@ public class ClientThread extends Thread {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+           disconnect();
         }
     }
     private void update(){
-        try{
-            if(message.getTypeOfOperation()!=Message.notEdit) {
-                if(message.getTypeOfOperation() == Message.change)
-                    Main.notEditable = new HashSet<>(message.getNotEditable());
-                Main.getDbc().update(message);
-            } else Main.notEditable = new HashSet<>(message.getNotEditable());
-            synchronized (message){
-                synchronized (secondConnection) {
+        if(message.getTypeOfOperation()!=Message.notEdit) {
+            if(message.getTypeOfOperation() == Message.change)
+                Main.notEditable = new HashSet<>(message.getNotEditable());
+            Main.getDbc().update(message);
+        } else Main.notEditable = new HashSet<>(message.getNotEditable());
+        synchronized (message){
+            synchronized (secondConnection) {
+                if(!Main.exc) {
+                    System.out.println("Происходит рассылка сообщения остальным пользователям...");
                     Main.threadHandler.sendMessage(message, secondConnection);
-                }
+                    System.out.println("Рассылка закончена.");
+                } else Main.exc = true;
             }
-            key.interestOps(SelectionKey.OP_READ);
-        }catch(Exception e){e.printStackTrace();}
+        }
+        key.interestOps(SelectionKey.OP_READ);
     }
     private void read(){
         try {
@@ -109,7 +87,6 @@ public class ClientThread extends Thread {
             int i = channel.read(bb);
             bb.flip();
             byte size = bb.get();
-            System.out.println(size);
             for(int j=1;j<i;j++){
                 mesIn.append((char)bb.get());
             }
@@ -121,21 +98,25 @@ public class ClientThread extends Thread {
                     mesIn.append((char)bb.get());
                 }
             }
-            System.out.println("Строка" + mesIn);
+            System.out.println("Принял сообщение от " + channel.getRemoteAddress());
             message = gson.fromJson(mesIn.toString(), Message.class);
-            System.out.println("Объект создан");
             makeRequest(message.getState());
-            System.out.println(requests.size());
-            System.out.println("Запрос сделан");
             if(message.maxID!=-10)
                 Main.maxID=message.maxID;
             key.interestOps(SelectionKey.OP_WRITE);
-        }catch (Exception e){
+        }catch (IOException e){
+            try{
+                makeRequest(ConnectionState.NEW_DATA);
+            }catch (InterruptedException ex){
+                ex.printStackTrace();
+            }
+        } catch (InterruptedException e){
             e.printStackTrace();
         }
     }
     private void disconnect(){
         try {
+            String str = channel.getRemoteAddress().toString();
             channel.close();
             key.cancel();
             isConnected=false;
@@ -143,7 +124,7 @@ public class ClientThread extends Thread {
                 Main.threadHandler.removeConnection(secondConnection);
             }
             requests.put(ConnectionState.FINAL_ITERATE);
-            System.out.println("Disconnected");
+            System.out.println("Клиент " + str + " был отключён.");
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -163,7 +144,6 @@ public class ClientThread extends Thread {
                         nh.thinkAbout(Main.thoughts.getString("thought"));
                 }
                 Main.thoughts.beforeFirst();
-                System.out.println(nh);
                 list.add(nh);
             }
             Main.normalHumans.beforeFirst();
@@ -172,10 +152,9 @@ public class ClientThread extends Thread {
             message.maxID=Main.maxID;
             message.reinitialize(Main.notEditable);
             String mes = gson.toJson(message);
-            System.out.println(mes);
             ByteBuffer buf = ByteBuffer.wrap(mes.getBytes());
             channel.write(buf);
             key.interestOps(SelectionKey.OP_READ);
-            System.out.println("Сделаль");
+            System.out.println("Клиенту " + channel.getRemoteAddress() + " отправлены начальные данные.");
     }
 }

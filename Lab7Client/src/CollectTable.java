@@ -52,6 +52,10 @@ public class CollectTable extends AbstractTableModel{
         data.add(str);
         fireTableDataChanged();
     }
+    public void removeAll(){
+        data.clear();
+        fireTableDataChanged();
+    }
     public void editData(String []row, int numberRow ){
         removeData(numberRow-1);
         data.add(numberRow-1,row);

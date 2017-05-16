@@ -1,6 +1,7 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.*;
@@ -40,13 +41,10 @@ public class Interface{
     private static ButtonsUnderTable but=null;
     private static ButtonsWithCommands bwc=null;
     private static CloseFrame cf = new CloseFrame(bwc);
-    public static void setIsChanged(boolean changed){
-        isChanged = changed;
-    }
-    public static Point getFrameLocation(){
-        return jf.getLocation();
-    }
+    public static void setIsChanged(boolean changed){isChanged = changed;}
+    public static Point getFrameLocation(){return jf.getLocation();}
     public synchronized static String getFile(){return file;}
+    public static Color getColor() {return color;}
     private static void colorChooser(){
         SwingUtilities.invokeLater(new Runnable() {
             @Override
@@ -304,7 +302,6 @@ public class Interface{
             while (dis.available() != 0) {
                 mesIn.append((char) dis.read());
             }
-            System.out.println(mesIn);
             message = gson.fromJson(mesIn.toString(), Message.class);
         }catch (IOException e){
             e.printStackTrace();
@@ -320,7 +317,7 @@ public class Interface{
             System.arraycopy(mesOut.getBytes(), 0, buf, 1, mesOut.getBytes().length);
             dos.write(buf);
         }catch (IOException e){
-            e.printStackTrace();
+
         }
     }
     public static void main(String[] args){
@@ -332,7 +329,6 @@ public class Interface{
             socketIS = socket.getInputStream();
             dis = new DataInputStream(socketIS);
             dos = new DataOutputStream(socketOS);
-            System.out.println("Потоки созданы");
             message = new Message(ConnectionState.NEED_DATA);
             message.maxID=-10;
             message.clearData();
@@ -342,6 +338,9 @@ public class Interface{
             coll = new LinkedList<>(message.getData());
             new AnotherConnection(secondSocket, coll, collt).start();
             SwingUtilities.invokeLater(() -> new Interface());
+        }catch(ConnectException e){
+            new Dialog("Нет подключения!Сервер отключён!",Interface.getColor());
+            System.exit(1);
         }catch(Exception e){
             e.printStackTrace();
         }

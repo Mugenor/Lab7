@@ -58,12 +58,11 @@ public class DataBaseCommunication {
                         sql.append(",('" + NewData.get(0).getThoughts(i) + "', " + NewData.get(0).getId() + " )");
                     }
                     sql.append(";");
-                    System.out.println(sql);
+
                     statement.execute(sql.toString());
                 }
             }
             else if(message.getTypeOfOperation()==Message.add) {
-                System.out.println("In add!");
                 statement.execute("insert into normalhuman values (" + NewData.get(0).getId() + ", '" + NewData.get(0).getName() + "'," + NewData.get(0).getAge() + "," + NewData.get(0).getTroublesWithTheLaw() + ");");
                 if(NewData.get(0).getThoughtsCount()!=0) {
                     StringBuilder sql = new StringBuilder();
@@ -72,7 +71,6 @@ public class DataBaseCommunication {
                         sql.append(",('" + NewData.get(0).getThoughts(i) + "', " + NewData.get(0).getId() + " )");
                     }
                     sql.append(";");
-                    System.out.println(sql);
                     statement.execute(sql.toString());
                 }
             }
@@ -82,17 +80,17 @@ public class DataBaseCommunication {
             }
             connection.commit();
             connection.setAutoCommit(true);
+            System.out.println("БД изменена");
             statement.close();
             connection.close();
-        }catch(Exception e){
+        }catch(SQLException e){
             try {
-                e.printStackTrace();
-                System.out.println("Exception");
+                System.out.println("Ошибка при изменении БД.");
+                Main.exc = true;
                 connection.rollback();
-            }catch (SQLException ez){ez.printStackTrace();}
+            }catch (SQLException ez){
+                System.out.println("Не удаётся произвести откат изменений БД.");
+            }
         }
-    }
-    public CachedRowSet getRowSet(){
-        return rowSet;
     }
 }
