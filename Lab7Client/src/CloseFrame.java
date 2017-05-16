@@ -41,7 +41,7 @@ public class CloseFrame extends JFrame {
                 public void actionPerformed(ActionEvent e) {
                     bwc.save();
                     Interface.message.setState(ConnectionState.DISCONNECT);
-                    Interface.message.clearData();
+                    Interface.message.getData().clear();
                     Interface.sendMessage();
                     System.exit(0);
                 }

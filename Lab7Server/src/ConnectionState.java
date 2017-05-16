@@ -5,7 +5,6 @@ import java.io.Serializable;
  */
 public class ConnectionState implements Serializable {
     protected static final long serialVersionUID = 42L;
-    public static final byte WAITING=20;
     public static final byte NEW_DATA=21;
     public static final byte DISCONNECT=22;
     public static final byte NEED_DATA=23;

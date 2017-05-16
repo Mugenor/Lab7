@@ -27,7 +27,7 @@ public class Main {
     private static InetAddress host;
     private static DataBaseCommunication dbc;
     private static Selector selector;
-    static HashSet<Integer> notEditable;
+    static HashSet<Integer> notEditable = new HashSet<>();
     static SecondThreadHandler threadHandler;
     static ServerSocket secondServerSocket;
     static int maxID=-1;

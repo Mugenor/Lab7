@@ -7,6 +7,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.sql.SQLException;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.concurrent.*;
 
@@ -88,7 +89,11 @@ public class ClientThread extends Thread {
     }
     private void update(){
         try{
-            Main.getDbc().update(message);
+            if(message.getTypeOfOperation()!=Message.notEdit) {
+                if(message.getTypeOfOperation() == Message.change)
+                    Main.notEditable = new HashSet<>(message.getNotEditable());
+                Main.getDbc().update(message);
+            } else Main.notEditable = new HashSet<>(message.getNotEditable());
             synchronized (message){
                 synchronized (secondConnection) {
                     Main.threadHandler.sendMessage(message, secondConnection);
@@ -165,6 +170,7 @@ public class ClientThread extends Thread {
             message.setState(ConnectionState.NEW_DATA);
             message.setData(list);
             message.maxID=Main.maxID;
+            message.reinitialize(Main.notEditable);
             String mes = gson.toJson(message);
             System.out.println(mes);
             ByteBuffer buf = ByteBuffer.wrap(mes.getBytes());

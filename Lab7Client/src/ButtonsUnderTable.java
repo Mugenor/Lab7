@@ -45,8 +45,15 @@ public class ButtonsUnderTable {
             Interface.sendMessage();}
     }
     public void edit(){
-        if(collections.getSelectedRow()!=-1&&!openedEditWindow) {
+        if((collections.getSelectedRow()!=-1&&!openedEditWindow) && !(Interface.notEditable.contains(coll.get(collections.getSelectedRow()).getId()))) {
             openedEditWindow=true;
+            Interface.notEditable.add(coll.get(collections.getSelectedRow()).getId());
+            Interface.message.getData().clear();
+            Interface.message.reinitialize(Interface.notEditable);
+            Interface.message.setTypeOfOperation(Message.notEdit);
+            Interface.message.setState(ConnectionState.NEW_DATA);
+            Interface.sendMessage();
+            System.out.println(Interface.notEditable);
             SwingUtilities.invokeLater(new Runnable() {
                 @Override
                 public void run() {

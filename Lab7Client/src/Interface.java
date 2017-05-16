@@ -11,6 +11,7 @@ import com.google.gson.Gson;
 import org.json.simple.*;
 
 public class Interface{
+    static HashSet<Integer> notEditable;
     static Socket secondSocket;
     static DataOutputStream dos;
     static DataInputStream dis;
@@ -19,7 +20,6 @@ public class Interface{
     static OutputStream socketOS;
     static Message message;
     static Gson gson;
-    static boolean connected=false;
     private static boolean isChanged = false;
     private static JFrame jf = new JFrame();
     private static JPanel panelu = new JPanel();
@@ -31,12 +31,12 @@ public class Interface{
     private static String file="";
     private static Color color=null;
     private static JButton colorChooserButton = new JButton("Choose color!");
-    private static LinkedList<NormalHuman> coll =null;
+    static LinkedList<NormalHuman> coll =null;
     private static DefaultListModel<String> dlm= new DefaultListModel<>();
     private static JList<String> listCommands = new JList<>(dlm);
     private static JButton doButton;
     private static CollectTable collt = new CollectTable();
-    private static JTable collections = new JTable(collt);
+    static JTable collections = new JTable(collt);
     private static ButtonsUnderTable but=null;
     private static ButtonsWithCommands bwc=null;
     private static CloseFrame cf = new CloseFrame(bwc);
@@ -126,7 +126,6 @@ public class Interface{
         collections.getTableHeader().setReorderingAllowed(false);
         collections.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         JScrollPane scroll = new JScrollPane(collections);
-        collections.setAutoCreateRowSorter(true);
         scroll.setPreferredSize(new Dimension(300,500));
         panelu.setLayout(new GridBagLayout());
         panelu.add(scroll,new GridBagConstraints(0,0,1,1,1,1,
@@ -339,6 +338,7 @@ public class Interface{
             message.clearData();
             sendMessage();
             getMessage();
+            notEditable = message.getNotEditable();
             coll = new LinkedList<>(message.getData());
             new AnotherConnection(secondSocket, coll, collt).start();
             SwingUtilities.invokeLater(() -> new Interface());

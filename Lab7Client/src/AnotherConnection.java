@@ -5,6 +5,7 @@ import sun.awt.image.ImageWatched;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.HashSet;
 import java.util.LinkedList;
 
 /**
@@ -53,19 +54,25 @@ public class AnotherConnection extends Thread {
                 else if(message.getTypeOfOperation() == Message.change){
                     synchronized (list){
                         synchronized (collt){
-                            boolean notChanged = true;
-                            int i = 0;
-                            while (notChanged){
-                                if(message.getData().get(0).getId()==list.get(i).getId()){
-                                    list.set(i, message.getData().get(0));
-                                    collt.editData(message.getData().get(0), i);
-                                    notChanged=false;
+                            synchronized (Interface.notEditable) {
+                                Interface.notEditable = new HashSet<>(message.getNotEditable());
+                                boolean notChanged = true;
+                                int i = 0;
+                                while (notChanged) {
+                                    if (message.getData().get(0).getId() == list.get(i).getId()) {
+                                        list.set(i, message.getData().get(0));
+                                        collt.editData(message.getData().get(0), i);
+                                        notChanged = false;
+                                    }
+                                    if (i > list.size()) notChanged = false;
+                                    i++;
                                 }
-                                if(i>list.size())notChanged=false;
-                                i++;
                             }
                         }
                     }
+                }
+                else if(message.getTypeOfOperation() == Message.notEdit){
+                    Interface.notEditable = new HashSet<>(message.getNotEditable());
                 }
             }
         }catch (IOException e){
