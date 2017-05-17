@@ -76,25 +76,33 @@ public class ButtonsWithCommands {
                         @Override
                         public void actionPerformed(ActionEvent e) {
                             String s = tf.getText();
-                            try{NormalHuman nh=Interface.StringToObject(s);
-                                if(coll.indexOf(nh)!=-1){
-                                collt.removeData(coll.indexOf(nh));
-                                System.out.println(collt);
-                                Interface.setIsChanged(true);
-                                coll.remove(nh);
-                                System.out.println(coll);
-                                Interface.message.getData().clear();
-                                Interface.message.getData().add(nh);
-                                Interface.message.setTypeOfOperation(Message.delete);
-                                Interface.message.setState(ConnectionState.NEW_DATA);
-                                Interface.sendMessage();
-                                jf.dispose();
-                                openedRemoveWindow=false;} else throw new ArrayIndexOutOfBoundsException();}
+                            try {
+                                NormalHuman nh = Interface.StringToObject(s);
+                                int i = coll.indexOf(nh);
+                                int id = coll.get(i).getId();
+                                if (i != -1) {
+                                    System.out.println(Interface.notEditable + " : " + id);
+                                    if (Interface.notEditable.contains(id)) throw new IllegalArgumentException();
+                                    collt.removeData(i);
+                                    coll.remove(nh);
+                                    System.out.println(coll);
+                                    Interface.message.getData().clear();
+                                    Interface.message.getData().add(nh);
+                                    Interface.message.setTypeOfOperation(Message.delete);
+                                    Interface.message.setState(ConnectionState.NEW_DATA);
+                                    Interface.sendMessage();
+                                    jf.dispose();
+                                    openedRemoveWindow = false;
+                                }
+                            }
                             catch (NullPointerException | KarlsonNameException exc){
                                 alabel.setText("Wrong NormalHuman!");
                             }
                             catch (ArrayIndexOutOfBoundsException exc){
                                 alabel.setText("There is no NormalHuman like this");
+                            }
+                            catch (IllegalArgumentException exc){
+                                new Dialog("Данный человек ещё редактируется!!!",Interface.getColor());
                             }
                         }
                     }); else alabel.setText("There is nothing to remove");

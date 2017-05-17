@@ -126,7 +126,9 @@ public class Main {
                             //Создание отдельного потока для пользователя и связывание его с ключом
                             SecondConnection secondConnection = new SecondConnection();
                             secondConnection.connect(secondServerSocket.accept());
-                            threadHandler.addConnection(secondConnection);
+                            synchronized (threadHandler) {
+                                threadHandler.addConnection(secondConnection);
+                            }
                             ClientThread newClientThread = new ClientThread(newChannel, newKey ,secondConnection);
                             executor.execute(newClientThread);
                             newKey.attach(newClientThread);

@@ -35,9 +35,8 @@ public class AnotherConnection extends Thread {
                 while (dis.available() != 0) {
                     mesIn.append((char) dis.read());
                 }
-                System.out.println(mesIn);
                 message = gson.fromJson(mesIn.toString(), Message.class);
-                if(message.getState() == ConnectionState.NEW_DATA){
+                if(message.getState() == ConnectionState.NEED_DATA){
                     synchronized (list) {
                         synchronized (collt) {
                             Interface.notEditable = message.getNotEditable();

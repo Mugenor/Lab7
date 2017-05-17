@@ -43,6 +43,8 @@ public class ButtonsUnderTable {
             coll.remove(collections.getSelectedRow());
             collt.removeData(collections.getSelectedRow());
             Interface.sendMessage();}
+        else if(collections.getSelectedRow()!=-1 && Interface.notEditable.contains(coll.get(collections.getSelectedRow()).getId()))
+            new Dialog("Данный человек ещё редактируется!!!",Interface.getColor());
     }
     public void edit(){
         if((collections.getSelectedRow()!=-1&&!openedEditWindow) && !(Interface.notEditable.contains(coll.get(collections.getSelectedRow()).getId()))) {
@@ -53,7 +55,6 @@ public class ButtonsUnderTable {
             Interface.message.setTypeOfOperation(Message.notEdit);
             Interface.message.setState(ConnectionState.NEW_DATA);
             Interface.sendMessage();
-            System.out.println(Interface.notEditable);
             SwingUtilities.invokeLater(new Runnable() {
                 @Override
                 public void run() {

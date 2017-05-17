@@ -65,6 +65,7 @@ public class ClientThread extends Thread {
     }
     private void update(){
         if(message.getTypeOfOperation()!=Message.notEdit) {
+            message.setState(ConnectionState.NEW_DATA);
             if(message.getTypeOfOperation() == Message.change)
                 Main.notEditable = new HashSet<>(message.getNotEditable());
             Main.getDbc().update(message);
@@ -99,14 +100,16 @@ public class ClientThread extends Thread {
                 }
             }
             System.out.println("Принял сообщение от " + channel.getRemoteAddress());
-            message = gson.fromJson(mesIn.toString(), Message.class);
-            makeRequest(message.getState());
-            if(message.maxID!=-10)
-                Main.maxID=message.maxID;
+            synchronized (message) {
+                message = gson.fromJson(mesIn.toString(), Message.class);
+                makeRequest(message.getState());
+                if (message.maxID != -10)
+                    Main.maxID = message.maxID;
+            }
             key.interestOps(SelectionKey.OP_WRITE);
         }catch (IOException e){
             try{
-                makeRequest(ConnectionState.NEW_DATA);
+                makeRequest(ConnectionState.NEED_DATA);
             }catch (InterruptedException ex){
                 ex.printStackTrace();
             }
@@ -147,11 +150,14 @@ public class ClientThread extends Thread {
                 list.add(nh);
             }
             Main.normalHumans.beforeFirst();
-            message.setState(ConnectionState.NEW_DATA);
-            message.setData(list);
-            message.maxID=Main.maxID;
-            message.reinitialize(Main.notEditable);
-            String mes = gson.toJson(message);
+            String mes;
+            synchronized (message) {
+                message.setState(ConnectionState.NEED_DATA);
+                message.setData(list);
+                message.maxID = Main.maxID;
+                message.reinitialize(Main.notEditable);
+                mes = gson.toJson(message);
+            }
             ByteBuffer buf = ByteBuffer.wrap(mes.getBytes());
             channel.write(buf);
             key.interestOps(SelectionKey.OP_READ);
