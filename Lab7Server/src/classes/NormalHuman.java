@@ -1,14 +1,13 @@
 package classes;
 
-/**
- * Created by Mugenor on 23.02.2017.
- */
-
+import myAnnotations.*;
 import java.util.ArrayList;
 
+@Table(name="normalhuman")
 public class NormalHuman extends Human implements Comparable<NormalHuman>{
-
+    @Column(name="age")
     protected Long age=1l;
+    @Property(type="classes.NormalHuman.Thoughts")
     protected ArrayList<Thoughts> thoughts;
     public NormalHuman(String name) throws KarlsonNameException{
         super(name);
@@ -18,7 +17,9 @@ public class NormalHuman extends Human implements Comparable<NormalHuman>{
         super();
         this.thoughts = new ArrayList<Thoughts>();
     }
+    @Table(name="thoughts")
     public class Thoughts implements Thinkable {
+        @Column(name="thought")
         protected String thought;
         public Thoughts(){}
         public void setThought(String th){thought=th;}
@@ -85,13 +86,6 @@ public class NormalHuman extends Human implements Comparable<NormalHuman>{
     }
     public ArrayList getAllThoughts(){
         return thoughts;
-    }
-    public boolean equals(Object nh) {
-        if (this == nh) return true;
-        if (nh == null || !(nh instanceof NormalHuman)) return false;
-        if(!super.equals(nh)) return false;
-        NormalHuman normalHuman = (NormalHuman) nh;
-        return thoughts.equals(normalHuman.getAllThoughts()) && age.equals(normalHuman.getAge());
     }
     public int hashCode() {
         int r = super.hashCode();

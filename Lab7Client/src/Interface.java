@@ -9,6 +9,7 @@ import java.io.*;
 import java.util.List;
 import classes.*;
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import org.json.simple.*;
 
 public class Interface{
@@ -295,17 +296,13 @@ public class Interface{
 
     }
 
-    public static void getMessage(){
-        try {
+    public static void getMessage()throws  IOException, JsonSyntaxException{
             StringBuilder mesIn = new StringBuilder();
             mesIn.append((char) dis.read());
             while (dis.available() != 0) {
                 mesIn.append((char) dis.read());
             }
             message = gson.fromJson(mesIn.toString(), Message.class);
-        }catch (IOException e){
-            e.printStackTrace();
-        }
     }
 
     public static void sendMessage(){
@@ -323,8 +320,8 @@ public class Interface{
     public static void main(String[] args){
         try {
             gson = new Gson();
-            socket = new Socket(InetAddress.getLocalHost(), 1000);
-            secondSocket = new Socket(InetAddress.getLocalHost(), 1001);
+            socket = new Socket("172.16.172.217", 23543);
+            secondSocket = new Socket("172.16.172.217", 23544);
             socketOS = socket.getOutputStream();
             socketIS = socket.getInputStream();
             dis = new DataInputStream(socketIS);
@@ -341,7 +338,9 @@ public class Interface{
         }catch(ConnectException e){
             new Dialog("Нет подключения!Сервер отключён!",Interface.getColor());
             System.exit(1);
-        }catch(Exception e){
+        }catch (JsonSyntaxException e){
+           new Dialog("На сервере что-то сломалось", Interface.getColor());
+        } catch(Exception e){
             e.printStackTrace();
         }
     }

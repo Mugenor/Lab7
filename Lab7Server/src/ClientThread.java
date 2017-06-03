@@ -2,6 +2,7 @@ import classes.KarlsonNameException;
 import classes.NormalHuman;
 import com.google.gson.Gson;
 
+import javax.management.openmbean.KeyAlreadyExistsException;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -9,6 +10,7 @@ import java.nio.channels.SocketChannel;
 import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.*;
 
 /**
@@ -46,7 +48,10 @@ public class ClientThread extends Thread {
                             read();
                             break;
                         case ConnectionState.NEED_DATA:
-                            sendData();
+                            sendData(ConnectionState.NEED_DATA);
+                            break;
+                        case  ConnectionState.ERROR:
+                            sendData(ConnectionState.ERROR);
                             break;
                         case ConnectionState.NEW_DATA:
                             update();
@@ -59,7 +64,12 @@ public class ClientThread extends Thread {
                     }
                 }
             }
-        } catch (Exception e) {
+        }catch (SQLException e){
+            System.out.println("У вас сломалась БД");
+            disconnect();
+        }
+        catch (Exception e) {
+            e.printStackTrace();
            disconnect();
         }
     }
@@ -76,7 +86,14 @@ public class ClientThread extends Thread {
                     System.out.println("Происходит рассылка сообщения остальным пользователям...");
                     Main.threadHandler.sendMessage(message, secondConnection);
                     System.out.println("Рассылка закончена.");
-                } else Main.exc = true;
+                } else {
+                    try {
+                        System.out.println("пересылаю");
+                        Message errorMessage = new Message(ConnectionState.ERROR);
+                        secondConnection.giveMessage(errorMessage);
+                    }catch (Exception e){e.printStackTrace();}
+                    Main.exc = true;
+                }
             }
         }
         key.interestOps(SelectionKey.OP_READ);
@@ -124,6 +141,7 @@ public class ClientThread extends Thread {
             key.cancel();
             isConnected=false;
             synchronized (Main.threadHandler) {
+                Main.threadHandler.disconnectUser(secondConnection);
                 Main.threadHandler.removeConnection(secondConnection);
             }
             requests.put(ConnectionState.FINAL_ITERATE);
@@ -132,13 +150,29 @@ public class ClientThread extends Thread {
             e.printStackTrace();
         }
     }
-    private void sendData() throws SQLException, IOException, KarlsonNameException{
+    private void sendData(byte state) throws SQLException, IOException, KarlsonNameException{
+        message = getMessageWithAllHumans(message, state);
+        String mes;
+        synchronized (message){
+            mes = gson.toJson(message);
+        }
+        ByteBuffer buf = ByteBuffer.wrap(mes.getBytes());
+        channel.write(buf);
+        key.interestOps(SelectionKey.OP_READ);
+        System.out.println("Клиенту " + channel.getRemoteAddress() + " отправлены начальные данные.");
+    }
+
+    private Message getMessageWithAllHumans(Message message, byte state) throws SQLException {
             LinkedList<NormalHuman> list = new LinkedList<>();
             Main.normalHumans = Main.getDbc().registerQueryAndGetRowSet("select * from normalhuman;");
             Main.thoughts = Main.getDbc().registerQueryAndGetRowSet("select * from thoughts;");
             while (Main.normalHumans.next()) {
                 NormalHuman nh = new NormalHuman();
-                nh.setName(Main.normalHumans.getString("name"));
+                try {
+                    nh.setName(Main.normalHumans.getString("name"));
+                }catch (KarlsonNameException e){
+                    e.printStackTrace();
+                }
                 nh.setAge(Main.normalHumans.getLong("age"));
                 nh.setTroublesWithTheLaw(Main.normalHumans.getBoolean("troublesWithTheLaw"));
                 nh.setId(Main.normalHumans.getInt("id"));
@@ -150,17 +184,13 @@ public class ClientThread extends Thread {
                 list.add(nh);
             }
             Main.normalHumans.beforeFirst();
-            String mes;
+            list.sort((nh1, nh2) -> nh1.getId()-nh2.getId());
             synchronized (message) {
-                message.setState(ConnectionState.NEED_DATA);
+                message.setState(state);
                 message.setData(list);
                 message.maxID = Main.maxID;
                 message.reinitialize(Main.notEditable);
-                mes = gson.toJson(message);
             }
-            ByteBuffer buf = ByteBuffer.wrap(mes.getBytes());
-            channel.write(buf);
-            key.interestOps(SelectionKey.OP_READ);
-            System.out.println("Клиенту " + channel.getRemoteAddress() + " отправлены начальные данные.");
+            return message;
     }
 }

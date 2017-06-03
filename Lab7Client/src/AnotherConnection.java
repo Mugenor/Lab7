@@ -1,7 +1,5 @@
 import classes.NormalHuman;
 import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
-import sun.awt.image.ImageWatched;
 
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -35,10 +33,16 @@ public class AnotherConnection extends Thread {
                 while (dis.available() != 0) {
                     mesIn.append((char) dis.read());
                 }
+                System.out.println(mesIn);
                 message = gson.fromJson(mesIn.toString(), Message.class);
+                if(message.getState() == ConnectionState.ERROR){
+                    new Dialog("Sorry, something went wrong.\n Your changes didn't save!", Interface.getColor());
+                    System.exit(1);
+                }else
                 if(message.getState() == ConnectionState.NEED_DATA){
                     synchronized (list) {
                         synchronized (collt) {
+                            System.out.println(message);
                             Interface.notEditable = message.getNotEditable();
                             list = new LinkedList<>(message.getData());
                             collt.removeAll();
@@ -46,6 +50,7 @@ public class AnotherConnection extends Thread {
                                 String[] obj = {list.get(i).getName(), list.get(i).getAge().toString(), list.get(i).getTroublesWithTheLaw().toString()};
                                 collt.addData(obj);
                             }
+                            Interface.message.maxID=message.maxID;
                         }
                     }
                 }
@@ -54,6 +59,7 @@ public class AnotherConnection extends Thread {
                         synchronized (collt){
                             list.add(message.getData().get(0));
                             collt.addData(message.getData().get(0));
+                            Interface.message.maxID=message.maxID;
                         }
                     }
                 }
@@ -62,6 +68,7 @@ public class AnotherConnection extends Thread {
                         synchronized (collt){
                             collt.removeData(list.indexOf(message.getData().get(0)));
                             list.remove(message.getData().get(0));
+                            Interface.message.maxID=message.maxID;
                         }
                     }
                 }
@@ -78,9 +85,10 @@ public class AnotherConnection extends Thread {
                                         collt.editData(message.getData().get(0), i);
                                         notChanged = false;
                                     }
-                                    if (i > list.size()) notChanged = false;
+                                    if (i >= list.size()) notChanged = false;
                                     i++;
                                 }
+                                Interface.message.maxID=message.maxID;
                             }
                         }
                     }
@@ -93,6 +101,6 @@ public class AnotherConnection extends Thread {
         catch(SocketException e) {
             new Dialog("Разрыв соединения!Сервер отключён!",Interface.getColor());
             System.exit(1);
-        }catch (IOException e){} catch(IllegalStateException e){}catch(JsonSyntaxException e){}
+        } catch(Exception e){e.printStackTrace();}
     }
 }

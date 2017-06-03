@@ -1,6 +1,5 @@
 import java.io.*;
 import java.net.*;
-import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
@@ -8,12 +7,8 @@ import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.sql.*;
 import java.util.*;
-import java.util.concurrent.Exchanger;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import classes.NormalHuman;
-import org.postgresql.ds.*;
 import javax.sql.rowset.CachedRowSet;
 
 /**
@@ -23,7 +18,8 @@ public class Main {
     private static final String url = "jdbc:postgresql://localhost:2345/lab7";
     private static final String username="postgres";
     private static final String password="123";
-    private static final int serverPort=1000;
+    private static final String IPv4 = "172.16.172.217";
+    private static final int serverPort=23543;
     private static InetAddress host;
     private static DataBaseCommunication dbc;
     private static Selector selector;
@@ -42,7 +38,7 @@ public class Main {
         try {
             //Определение хоста
             host=InetAddress.getLocalHost();
-            System.out.println("Адрес хоста: " + host.getHostAddress());
+            System.out.println("Адрес хоста: " + IPv4);
         }catch (UnknownHostException e){
             e.printStackTrace();
         }
@@ -69,10 +65,10 @@ public class Main {
         try {
             server = ServerSocketChannel.open();
             server.configureBlocking(false);
-            server.socket().bind(new InetSocketAddress(InetAddress.getLocalHost(), serverPort));
+            server.socket().bind(new InetSocketAddress(IPv4, serverPort));
             serverKey = server.register(selector, SelectionKey.OP_ACCEPT);
             secondServerSocket = new ServerSocket();
-            secondServerSocket.bind(new InetSocketAddress(InetAddress.getLocalHost(), serverPort+1));
+            secondServerSocket.bind(new InetSocketAddress(IPv4, serverPort+1));
         }catch (IOException e){
             System.out.println("Ошибка: Не удаётся открыть канал сервера");
             System.exit(1);

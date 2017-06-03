@@ -85,7 +85,7 @@ public class DataBaseCommunication {
             connection.close();
         }catch(SQLException e){
             try {
-                System.out.println("Ошибка при изменении БД.");
+                System.out.println("Attention!!! БД СЛОМАЛАСЬ!!!");
                 Main.exc = true;
                 connection.rollback();
             }catch (SQLException ez){

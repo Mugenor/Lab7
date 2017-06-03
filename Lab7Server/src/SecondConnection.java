@@ -13,20 +13,30 @@ public class SecondConnection extends Thread {
     private Socket socket;
     private BlockingQueue<Message> queue;
     private Gson gson = new Gson();
+    private boolean isAlive;
     public SecondConnection(){
         queue = new ArrayBlockingQueue<Message>(5);
+        isAlive=true;
     }
     public void run(){
         try {
-            while(!queue.isEmpty()){
+            while(isAlive){
                 Message message = queue.take();
-                String mes = gson.toJson(message);
-                OutputStream outputStream = socket.getOutputStream();
-                outputStream.write(mes.getBytes());
+                if(message.getState()!=ConnectionState.FINAL_ITERATE) {
+                    System.out.println("здеся");
+                    String mes = gson.toJson(message);
+                    OutputStream outputStream = socket.getOutputStream();
+                    outputStream.write(mes.getBytes());
+                }
             }
+            System.out.println("USER DISCONNECTED");
         }catch (InterruptedException | IOException e){
             e.printStackTrace();
         }
+    }
+    public void disconnect()throws InterruptedException{
+        isAlive=false;
+        queue.put(new Message(ConnectionState.FINAL_ITERATE));
     }
     public void connect(Socket socket){
         this.socket=socket;

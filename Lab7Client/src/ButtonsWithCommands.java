@@ -83,11 +83,12 @@ public class ButtonsWithCommands {
                                 if (i != -1) {
                                     System.out.println(Interface.notEditable + " : " + id);
                                     if (Interface.notEditable.contains(id)) throw new IllegalArgumentException();
-                                    collt.removeData(i);
-                                    coll.remove(nh);
+
                                     System.out.println(coll);
                                     Interface.message.getData().clear();
-                                    Interface.message.getData().add(nh);
+                                    Interface.message.getData().add(coll.get(coll.indexOf(nh)));
+                                    collt.removeData(i);
+                                    coll.remove(nh);
                                     Interface.message.setTypeOfOperation(Message.delete);
                                     Interface.message.setState(ConnectionState.NEW_DATA);
                                     Interface.sendMessage();

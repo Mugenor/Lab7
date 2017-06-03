@@ -10,10 +10,11 @@ import java.util.concurrent.Executors;
 public class SecondThreadHandler {
     List<SecondConnection> connections = new ArrayList<>();
     Executor executor = Executors.newCachedThreadPool();
-    public void addConnection(SecondConnection connection){
+    public synchronized void addConnection(SecondConnection connection){
         connections.add(connection);
+        executor.execute(connection);
     }
-    public void removeConnection(SecondConnection connection){
+    public synchronized void removeConnection(SecondConnection connection){
         synchronized (connection) {
             try {
                 connection.getSocket().close();
@@ -23,12 +24,18 @@ public class SecondThreadHandler {
             connections.remove(connection);
         }
     }
-    public void sendMessage(Message message , SecondConnection connection){
+    public synchronized void sendMessage(Message message , SecondConnection connection){
         for(SecondConnection secondConnection: connections){
             if(secondConnection!=connection){
                 secondConnection.giveMessage(message);
-                executor.execute(secondConnection);
             }
+        }
+    }
+    public synchronized void disconnectUser(SecondConnection sc){
+        try {
+            connections.get(connections.indexOf(sc)).disconnect();
+        }catch (InterruptedException e){
+            e.printStackTrace();
         }
     }
 }
