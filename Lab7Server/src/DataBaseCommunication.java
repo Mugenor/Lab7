@@ -17,6 +17,7 @@ import java.util.LinkedList;
 public class DataBaseCommunication {
     private final PGConnectionPoolDataSource pooledDataSource = new PGConnectionPoolDataSource();
     private final PooledConnection pooledConnection;
+    private LittleORM orm;
     private CachedRowSet rowSet;
     private final String username;
     private final String password;
@@ -26,6 +27,7 @@ public class DataBaseCommunication {
         pooledDataSource.setUrl(url);
         pooledConnection = pooledDataSource.getPooledConnection(username, password);
         Class.forName(driver);
+        orm = new LittleORM(pooledConnection);
     }
     public void registerQuery(String sql)throws SQLException{
         Connection connection = pooledConnection.getConnection();
@@ -41,6 +43,9 @@ public class DataBaseCommunication {
         registerQuery(sql);
         return rowSet;
     }
+    public LittleORM getOrm(){
+        return orm;
+    }
     public void update(Message message){
         Connection connection = null;
         try {
@@ -49,48 +54,27 @@ public class DataBaseCommunication {
             connection.setAutoCommit(false);
             Statement statement = connection.createStatement();
             if(message.getTypeOfOperation()==Message.change) {
-                statement.execute("update normalhuman set name = '" + NewData.get(0).getName() + "', age = " + NewData.get(0).getAge() + ", troubleswiththelaw = " + NewData.get(0).getTroublesWithTheLaw() + " where id = " + NewData.get(0).getId() + ";");
-                statement.execute("delete from thoughts where id=" + NewData.get(0).getId()+";");
-                if(NewData.get(0).getThoughtsCount()!=0) {
-                    StringBuilder sql = new StringBuilder();
-                    sql.append("insert into thoughts values('" + NewData.get(0).getThoughts(0) + "', " + NewData.get(0).getId() + " )");
-                    for (int i = 1; i < NewData.get(0).countOfThoughts(); i++) {
-                        sql.append(",('" + NewData.get(0).getThoughts(i) + "', " + NewData.get(0).getId() + " )");
-                    }
-                    sql.append(";");
-
-                    statement.execute(sql.toString());
-                }
+                orm.updateObject(NewData.get(0));
             }
             else if(message.getTypeOfOperation()==Message.add) {
-                statement.execute("insert into normalhuman values (" + NewData.get(0).getId() + ", '" + NewData.get(0).getName() + "'," + NewData.get(0).getAge() + "," + NewData.get(0).getTroublesWithTheLaw() + ");");
-                if(NewData.get(0).getThoughtsCount()!=0) {
-                    StringBuilder sql = new StringBuilder();
-                    sql.append("insert into thoughts values('" + NewData.get(0).getThoughts(0) + "', " + NewData.get(0).getId() + " )");
-                    for (int i = 1; i < NewData.get(0).countOfThoughts(); i++) {
-                        sql.append(",('" + NewData.get(0).getThoughts(i) + "', " + NewData.get(0).getId() + " )");
-                    }
-                    sql.append(";");
-                    statement.execute(sql.toString());
-                }
+                orm.writeObject(NewData.get(0));
             }
             else if(message.getTypeOfOperation()==Message.delete) {
-                statement.execute("delete from thoughts where id=" + NewData.get(0).getId() + ";");
-                statement.execute("delete from normalhuman where id = " + NewData.get(0).getId() + ";");
+                orm.deleteObject(NewData.get(0));
             }
-            connection.commit();
-            connection.setAutoCommit(true);
-            System.out.println("БД изменена");
-            statement.close();
-            connection.close();
         }catch(SQLException e){
             try {
+                e.printStackTrace();
                 System.out.println("Attention!!! БД СЛОМАЛАСЬ!!!");
                 Main.exc = true;
                 connection.rollback();
             }catch (SQLException ez){
+                e.printStackTrace();
                 System.out.println("Не удаётся произвести откат изменений БД.");
             }
+        }
+        catch (Exception e){
+            e.printStackTrace();
         }
     }
 }

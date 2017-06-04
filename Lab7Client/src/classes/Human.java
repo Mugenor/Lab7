@@ -11,7 +11,7 @@ import java.io.Serializable;
 
 abstract public class Human implements Serializable {
     protected static final long serialVersionUID = 42L;
-    @Column(name="troubleswiththelow")
+    @Column(name="troubleswiththelaw")
     protected Boolean troublesWithTheLaw=false;
     @Column(name="name")
     protected String name;

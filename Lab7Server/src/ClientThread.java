@@ -1,6 +1,7 @@
 import classes.KarlsonNameException;
 import classes.NormalHuman;
 import com.google.gson.Gson;
+import exceptions.ORMException;
 
 import javax.management.openmbean.KeyAlreadyExistsException;
 import java.io.*;
@@ -65,6 +66,7 @@ public class ClientThread extends Thread {
                 }
             }
         }catch (SQLException e){
+            e.printStackTrace();
             System.out.println("У вас сломалась БД");
             disconnect();
         }
@@ -150,7 +152,7 @@ public class ClientThread extends Thread {
             e.printStackTrace();
         }
     }
-    private void sendData(byte state) throws SQLException, IOException, KarlsonNameException{
+    private void sendData(byte state) throws SQLException, IOException, KarlsonNameException, ORMException, ClassNotFoundException, IllegalAccessException, InstantiationException{
         message = getMessageWithAllHumans(message, state);
         String mes;
         synchronized (message){
@@ -162,28 +164,8 @@ public class ClientThread extends Thread {
         System.out.println("Клиенту " + channel.getRemoteAddress() + " отправлены начальные данные.");
     }
 
-    private Message getMessageWithAllHumans(Message message, byte state) throws SQLException {
-            LinkedList<NormalHuman> list = new LinkedList<>();
-            Main.normalHumans = Main.getDbc().registerQueryAndGetRowSet("select * from normalhuman;");
-            Main.thoughts = Main.getDbc().registerQueryAndGetRowSet("select * from thoughts;");
-            while (Main.normalHumans.next()) {
-                NormalHuman nh = new NormalHuman();
-                try {
-                    nh.setName(Main.normalHumans.getString("name"));
-                }catch (KarlsonNameException e){
-                    e.printStackTrace();
-                }
-                nh.setAge(Main.normalHumans.getLong("age"));
-                nh.setTroublesWithTheLaw(Main.normalHumans.getBoolean("troublesWithTheLaw"));
-                nh.setId(Main.normalHumans.getInt("id"));
-                while (Main.thoughts.next()) {
-                    if (Main.normalHumans.getInt("id") == Main.thoughts.getInt("id"))
-                        nh.thinkAbout(Main.thoughts.getString("thought"));
-                }
-                Main.thoughts.beforeFirst();
-                list.add(nh);
-            }
-            Main.normalHumans.beforeFirst();
+    private Message getMessageWithAllHumans(Message message, byte state) throws SQLException, ORMException, ClassNotFoundException, IllegalAccessException, InstantiationException {
+            LinkedList<NormalHuman> list = Main.getDbc().getOrm().getAllObjects(NormalHuman.class);
             list.sort((nh1, nh2) -> nh1.getId()-nh2.getId());
             synchronized (message) {
                 message.setState(state);

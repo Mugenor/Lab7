@@ -27,8 +27,6 @@ public class Main {
     static SecondThreadHandler threadHandler;
     static ServerSocket secondServerSocket;
     static int maxID=-1;
-    static CachedRowSet normalHumans;
-    static CachedRowSet thoughts;
     static volatile boolean exc=false;
     public static DataBaseCommunication getDbc(){
         return dbc;
@@ -76,8 +74,7 @@ public class Main {
             e.printStackTrace();
         };
         try{
-           normalHumans = dbc.registerQueryAndGetRowSet("select * from normalhuman;");
-           thoughts = dbc.registerQueryAndGetRowSet("select * from thoughts;");
+            CachedRowSet normalHumans = dbc.registerQueryAndGetRowSet("select * from normalhuman;");
             while(normalHumans.next()){
                 int id = normalHumans.getInt("id");
                 if(id>maxID)maxID=id;
@@ -88,14 +85,13 @@ public class Main {
             e.printStackTrace();
             return;
         }
+
         threadHandler = new SecondThreadHandler();
         ExecutorService executor = Executors.newFixedThreadPool(10);
         Runtime.getRuntime().addShutdownHook(new Thread(){
             public void run(){
                 try {
                     selector.close();
-                    normalHumans.close();
-                    thoughts.close();
                     executor.shutdown();
                 }catch(Exception e){
                     e.printStackTrace();

@@ -1,8 +1,9 @@
 package classes;
 
-import myAnnotations.*;
-import java.io.Serializable;
+import myAnnotations.Column;
+import myAnnotations.Id;
 
+import java.io.Serializable;
 
 /**
  * Created by Mugenor on 23.02.2017.
@@ -10,7 +11,7 @@ import java.io.Serializable;
 
 abstract public class Human implements Serializable {
     protected static final long serialVersionUID = 42L;
-    @Column(name="troubleswiththelow")
+    @Column(name="troubleswiththelaw")
     protected Boolean troublesWithTheLaw=false;
     @Column(name="name")
     protected String name;
