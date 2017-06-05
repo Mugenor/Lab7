@@ -19,7 +19,7 @@ public class Main {
     private static final String username="postgres";
     private static final String password="123";
     private static final String IPv4 = "172.16.172.217";
-    private static final int serverPort=23543;
+    private static final int serverPort=23500;
     private static InetAddress host;
     private static DataBaseCommunication dbc;
     private static Selector selector;
@@ -116,8 +116,7 @@ public class Main {
                             newChannel.configureBlocking(false);
                             SelectionKey newKey = newChannel.register(selector, SelectionKey.OP_READ);
                             //Создание отдельного потока для пользователя и связывание его с ключом
-                            SecondConnection secondConnection = new SecondConnection();
-                            secondConnection.connect(secondServerSocket.accept());
+                            SecondConnection secondConnection = new SecondConnection(secondServerSocket.accept());
                             synchronized (threadHandler) {
                                 threadHandler.addConnection(secondConnection);
                             }

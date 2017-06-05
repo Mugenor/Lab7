@@ -1,10 +1,12 @@
 import classes.KarlsonNameException;
 import classes.NormalHuman;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import exceptions.ORMException;
 
 import javax.management.openmbean.KeyAlreadyExistsException;
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
@@ -24,18 +26,20 @@ public class ClientThread extends Thread {
     private SelectionKey key;
     private BlockingQueue<Byte> requests;
     private boolean isConnected;
-    private ByteBuffer bb;
     private Gson gson;
     private SecondConnection secondConnection;
-    public ClientThread(SocketChannel channel , SelectionKey key, SecondConnection secondConnection){
+    private ByteArrayOutputStream baos;
+    private ObjectOutputStream oos;
+    public ClientThread(SocketChannel channel , SelectionKey key, SecondConnection secondConnection) throws IOException{
         this.message = new Message(ConnectionState.NEW_DATA);
         this.channel=channel;
         this.key = key;
         this.requests = new ArrayBlockingQueue<>(5);
         this.isConnected=true;
-        this.bb = ByteBuffer.allocate(512);
-        this.gson = new Gson();
+        this.gson = new GsonBuilder().addDeserializationExclusionStrategy(new GsonDeserializeExclusion()).create();
         this.secondConnection = secondConnection;
+        baos = new ByteArrayOutputStream();
+        oos = new ObjectOutputStream(baos);
     }
     public void makeRequest(byte i) throws InterruptedException{
         requests.put(i);
@@ -102,37 +106,37 @@ public class ClientThread extends Thread {
     }
     private void read(){
         try {
-            StringBuilder mesIn = new StringBuilder();
-            bb.clear();
-            int i = channel.read(bb);
-            bb.flip();
-            byte size = bb.get();
-            for(int j=1;j<i;j++){
-                mesIn.append((char)bb.get());
-            }
-            for(int k=1;k<size;k++){
-                bb.clear();
-                int l = channel.read(bb);
-                bb.flip();
-                for(int j=0;j<l;j++){
-                    mesIn.append((char)bb.get());
-                }
-            }
+            ByteBuffer size = ByteBuffer.allocate(1);
+            channel.read(size);
+            int j = size.get(0);
+            ByteBuffer mes = ByteBuffer.allocate(512 * j);
+            System.out.println("перед read");
+            channel.read(mes);
+            System.out.println("после read");
+            System.out.println(mes);
+            ByteArrayInputStream bais = new ByteArrayInputStream(mes.array());
+            ObjectInputStream ois = new ObjectInputStream(bais);
+            System.out.println("перед message");
+            message = (Message) ois.readObject();
+            System.out.println("после message");
+            bais.close();
+            ois.close();
+            System.out.println(message.getState());
             System.out.println("Принял сообщение от " + channel.getRemoteAddress());
             synchronized (message) {
-                message = gson.fromJson(mesIn.toString(), Message.class);
                 makeRequest(message.getState());
                 if (message.maxID != -10)
                     Main.maxID = message.maxID;
             }
             key.interestOps(SelectionKey.OP_WRITE);
         }catch (IOException e){
+            e.printStackTrace();
             try{
                 makeRequest(ConnectionState.NEED_DATA);
             }catch (InterruptedException ex){
                 ex.printStackTrace();
             }
-        } catch (InterruptedException e){
+        } catch (Exception e){
             e.printStackTrace();
         }
     }
@@ -152,19 +156,24 @@ public class ClientThread extends Thread {
             e.printStackTrace();
         }
     }
-    private void sendData(byte state) throws SQLException, IOException, KarlsonNameException, ORMException, ClassNotFoundException, IllegalAccessException, InstantiationException{
+    private void sendData(byte state) throws SQLException, IOException, KarlsonNameException, ORMException, ClassNotFoundException,
+            IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException{
         message = getMessageWithAllHumans(message, state);
-        String mes;
-        synchronized (message){
-            mes = gson.toJson(message);
-        }
-        ByteBuffer buf = ByteBuffer.wrap(mes.getBytes());
-        channel.write(buf);
+        oos.writeObject(message);
+        oos.flush();
+        baos.flush();
+        byte[] size = new byte[1];
+        size[0] = (byte) Math.ceil((int)Math.ceil((double)baos.size()/(double)512));
+        channel.write(ByteBuffer.wrap(size));
+        channel.write(ByteBuffer.wrap(baos.toByteArray()));
+        baos.reset();
+        oos.reset();
         key.interestOps(SelectionKey.OP_READ);
         System.out.println("Клиенту " + channel.getRemoteAddress() + " отправлены начальные данные.");
     }
 
-    private Message getMessageWithAllHumans(Message message, byte state) throws SQLException, ORMException, ClassNotFoundException, IllegalAccessException, InstantiationException {
+    private Message getMessageWithAllHumans(Message message, byte state) throws SQLException, ORMException, ClassNotFoundException,
+            IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
             LinkedList<NormalHuman> list = Main.getDbc().getOrm().getAllObjects(NormalHuman.class);
             list.sort((nh1, nh2) -> nh1.getId()-nh2.getId());
             synchronized (message) {

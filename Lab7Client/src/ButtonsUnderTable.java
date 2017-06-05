@@ -19,12 +19,17 @@ public class ButtonsUnderTable {
     private EditWindow ew = new EditWindow();
     private boolean openedShowWindow = false;
     private boolean openedEditWindow= false;
+    private JFrame jf= new JFrame(ResourceBundle.getBundle("Locale", Interface.getLocale()).getString("ShowThoughts"));;
     private DefaultListModel<String> dlm= new DefaultListModel<>();
     private JList<String> list = new JList<>(dlm);
     public void setColor(Color col){
         c = col;
         ew.setColor(col);
         list.setForeground(c);
+    }
+    public void updateLanguage(){
+        ew.updateLocale();
+        jf.setTitle(ResourceBundle.getBundle("Locale", Interface.getLocale()).getString("ShowThoughts"));
     }
     ButtonsUnderTable(JTable table, CollectTable ct, LinkedList<NormalHuman> coll){
         collt=ct;
@@ -44,7 +49,7 @@ public class ButtonsUnderTable {
             collt.removeData(collections.getSelectedRow());
             Interface.sendMessage();}
         else if(collections.getSelectedRow()!=-1 && Interface.notEditable.contains(coll.get(collections.getSelectedRow()).getId()))
-            new Dialog("Данный человек ещё редактируется!!!",Interface.getColor());
+            new Dialog("Данный человек редактируется!!!",Interface.getColor());
     }
     public void edit(){
         if((collections.getSelectedRow()!=-1&&!openedEditWindow) && !(Interface.notEditable.contains(coll.get(collections.getSelectedRow()).getId()))) {
@@ -58,7 +63,7 @@ public class ButtonsUnderTable {
             SwingUtilities.invokeLater(new Runnable() {
                 @Override
                 public void run() {
-                    ew = new EditWindow("Edit Person",
+                    ew = new EditWindow(ResourceBundle.getBundle("Locale", Interface.getLocale()).getString("Edit"),
                             coll.get(collections.getSelectedRow()),
                             collt, collections.getSelectedRow(),
                             new EditExit() {
@@ -78,7 +83,7 @@ public class ButtonsUnderTable {
             });
         }
         else if((collections.getSelectedRow()!=-1&&!openedEditWindow) && (Interface.notEditable.contains(coll.get(collections.getSelectedRow()).getId()))){
-            new Dialog("Данный человек уже редактируется!!!",Interface.getColor());
+            new Dialog("Данный человек редактируется!!!",Interface.getColor());
         }
     }
     public void showThoughts(){
@@ -87,7 +92,7 @@ public class ButtonsUnderTable {
             SwingUtilities.invokeLater(new Runnable() {
                 @Override
                 public void run() {
-                    JFrame jf= new JFrame("Thoughts Frame");
+                    jf = new JFrame(ResourceBundle.getBundle("Locale", Interface.getLocale()).getString("ShowThoughts"));
                     jf.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
                     jf.setResizable(false);
                     jf.setSize(new Dimension(400,200));

@@ -2,6 +2,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ResourceBundle;
 
 /**
  * Created by Mugenor on 13.04.2017.
@@ -18,7 +19,7 @@ public class ExceptionFrame {
         exceptionFrame.setDefaultCloseOperation(i);
         JLabel exceptionLabel = new JLabel(exc);
         exceptionFrame.setLayout(new GridLayout(2,1));
-        JButton exceptionButton = new JButton("Ok");
+        JButton exceptionButton = new JButton(ResourceBundle.getBundle("Locale", Interface.getLocale()).getString("Ok"));
         exceptionButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {

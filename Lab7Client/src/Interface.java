@@ -2,55 +2,161 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.net.ConnectException;
-import java.net.InetAddress;
 import java.net.Socket;
+import java.net.SocketException;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.io.*;
 import java.util.List;
+import java.util.stream.Collectors;
+
 import classes.*;
 import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
+import com.google.gson.GsonBuilder;
 import org.json.simple.*;
-
 public class Interface{
     static HashSet<Integer> notEditable;
     static Socket secondSocket;
-    static DataOutputStream dos;
-    static DataInputStream dis;
+    static ObjectOutputStream dos;
+    static ObjectInputStream dis;
     static Socket socket;
     static InputStream socketIS;
     static OutputStream socketOS;
     static Message message;
     static Gson gson;
+    static ByteArrayOutputStream baos;
+    static ByteArrayInputStream bais;
     private static boolean isChanged = false;
     private static JFrame jf = new JFrame();
     private static JPanel panelu = new JPanel();
     private static JPanel paneld= new JPanel(null);
     private static JPanel panelc= new JPanel();
-    private static JButton showThoughtsButton = new JButton("Show thoughts");
-    private static JButton editButton = new JButton("Edit");
-    private static JButton deleteButton = new JButton("Delete");
+    private static Locale locale = new Locale("ru");
+    private static JFrame colorFrame = new JFrame(ResourceBundle.getBundle("Locale",locale).getString("ChooseColor"));
+    private static JButton showThoughtsButton = new JButton(ResourceBundle.getBundle("Locale",locale).getString("ShowThoughts"));
+    private static JButton editButton = new JButton(ResourceBundle.getBundle("Locale",locale).getString("Edit"));
+    private static JButton deleteButton = new JButton(ResourceBundle.getBundle("Locale",locale).getString("Delete"));
+    private static JButton ok = new JButton(ResourceBundle.getBundle("Locale",locale).getString("Ok"));
+    private static JFrame language = new JFrame("Choose language!");
     private static String file="";
     private static Color color=null;
-    private static JButton colorChooserButton = new JButton("Choose color!");
+    private static DateTimeFormatter formatter = DateTimeFormatter.ofPattern(ResourceBundle.getBundle("Locale",locale).getString("DateTime"));
+    private static JButton colorChooserButton = new JButton(ResourceBundle.getBundle("Locale",locale).getString("ChooseColor"));
+    private static JButton languageChooserButton = new JButton(ResourceBundle.getBundle("Locale",locale).getString("ChooseLanguage"));
+    private static JButton sortButton = new JButton(ResourceBundle.getBundle("Locale",locale).getString("Sort"));
     static LinkedList<NormalHuman> coll =null;
     private static DefaultListModel<String> dlm= new DefaultListModel<>();
     private static JList<String> listCommands = new JList<>(dlm);
-    private static JButton doButton;
+    private static JButton doButton = new JButton(ResourceBundle.getBundle("Locale",locale).getString("Do"));
     private static CollectTable collt = new CollectTable();
     static JTable collections = new JTable(collt);
     private static ButtonsUnderTable but=null;
     private static ButtonsWithCommands bwc=null;
+    private static JButton cb = new JButton(ResourceBundle.getBundle("Locale",locale).getString("ChooseColor"));
     private static CloseFrame cf = new CloseFrame(bwc);
     public static void setIsChanged(boolean changed){isChanged = changed;}
     public static Point getFrameLocation(){return jf.getLocation();}
     public synchronized static String getFile(){return file;}
     public static Color getColor() {return color;}
+    public static DateTimeFormatter getFormatter() {return formatter;}
+    public static void setFormatter(DateTimeFormatter formatter) {Interface.formatter = formatter;}
+    public static Locale getLocale() {return locale;}
+    public static void setLocale(Locale locale) {
+        Interface.locale = locale;
+        cb.setText(ResourceBundle.getBundle("Locale",locale).getString("ChooseColor"));
+        colorFrame.setTitle(ResourceBundle.getBundle("Locale",locale).getString("ChooseColor"));
+        colorChooserButton.setText(ResourceBundle.getBundle("Locale",locale).getString("ChooseColor"));
+        languageChooserButton.setText(ResourceBundle.getBundle("Locale",locale).getString("ChooseLanguage"));
+        showThoughtsButton.setText(ResourceBundle.getBundle("Locale",locale).getString("ShowThoughts"));
+        language.setTitle(ResourceBundle.getBundle("Locale",locale).getString("ChooseLanguage"));
+        deleteButton.setText(ResourceBundle.getBundle("Locale",locale).getString("Delete"));
+        ok.setText(ResourceBundle.getBundle("Locale",locale).getString("Ok"));
+        editButton.setText(ResourceBundle.getBundle("Locale",locale).getString("Edit"));
+        doButton.setText(ResourceBundle.getBundle("Locale",locale).getString("Do"));
+        jf.setTitle(ResourceBundle.getBundle("Locale",locale).getString("MalishAndKarlson"));
+        sortButton.setText(ResourceBundle.getBundle("Locale",locale).getString("Sort"));
+        bwc.updateLanguage();
+        but.updateLanguage();
+        collt.updateLanguage();
+        collections.getColumnModel().getColumn(3).setResizable(false);
+        collections.getColumnModel().getColumn(2).setResizable(false);
+        collections.getColumnModel().getColumn(1).setResizable(false);
+        collections.getColumnModel().getColumn(0).setResizable(false);
+        dlm.clear();
+        dlm.addElement(ResourceBundle.getBundle("Locale",locale).getString("Remove"));
+        dlm.addElement(ResourceBundle.getBundle("Locale",locale).getString("AddPerson"));
+        dlm.addElement(ResourceBundle.getBundle("Locale",locale).getString("AddInJson"));
+        dlm.addElement(ResourceBundle.getBundle("Locale",locale).getString("hust"));
+        dlm.addElement(ResourceBundle.getBundle("Locale",locale).getString("Filter"));
+    }
+    private static void languageChooser(){
+        language.setLayout(null);
+        language.setForeground(Color.white);
+        language.setResizable(false);
+        language.setAutoRequestFocus(true);
+        language.setLocation(600,250);
+        language.setSize(new Dimension(150,200));
+        ok.setLocation(36,120);
+        ok.setSize(70,30);
+        ButtonGroup group = new ButtonGroup();
+        JRadioButton rus = new JRadioButton("Русский");
+        JRadioButton isl = new JRadioButton("Íslensk");
+        JRadioButton grec = new JRadioButton("Ελληνικά");
+        JRadioButton isp = new JRadioButton("Español");
+        rus.setSelected(true);
+        rus.setFont(new Font("Verdana", Font.PLAIN, 12));
+        isl.setFont(new Font("Verdana", Font.PLAIN, 12));
+        grec.setFont(new Font("Verdana", Font.PLAIN, 12));
+        isp.setFont(new Font("Verdana", Font.PLAIN, 12));
+        rus.setSize(80, 30);
+        isl.setSize(100, 30);
+        grec.setSize(100, 30);
+        isp.setSize(80, 30);
+        rus.setLocation(10, 10);
+        isl.setLocation(10, 35);
+        grec.setLocation(10, 60);
+        isp.setLocation(10, 85);
+        group.add(rus);
+        group.add(isl);
+        group.add(isp);
+        group.add(grec);
+        ok.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if(rus.isSelected())
+                    setLocale(new Locale("ru"));
+                if(isl.isSelected())
+                    setLocale(new Locale("isl"));
+                if(isp.isSelected())
+                    setLocale(new Locale("isp"));
+                if(grec.isSelected())
+                    setLocale(new Locale("gr"));
+            }
+        });
+        language.add(ok);
+        language.add(rus);
+        language.add(isl);
+        language.add(isp);
+        language.add(grec);
+        //
+        language.setVisible(true);
+
+    }
+    private static void sort(){
+        List<NormalHuman> c = coll.stream().sorted().collect(Collectors.toList());
+        coll.clear();
+        coll.addAll(c);
+        collt.removeAll();
+        for(int i=0;i<coll.size();i++){
+            String[] obj = {coll.get(i).getName(),coll.get(i).getAge().toString(), ResourceBundle.getBundle("Locale", Interface.getLocale()).getString(coll.get(i).getTroublesWithTheLaw().toString()),coll.get(i).getTimeOfCreate().format(formatter)};
+            collt.addData(obj);
+        }
+    }
     private static void colorChooser(){
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                JFrame colorFrame = new JFrame("Choose color!");
+                colorFrame = new JFrame(ResourceBundle.getBundle("Locale",locale).getString("ChooseColor"));
                 colorFrame.setAutoRequestFocus(true);
                 colorFrame.setSize(new Dimension(700,400));
                 colorFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -60,15 +166,17 @@ public class Interface{
                 colorFrame.add(cc, new GridBagConstraints(
                         0,0,3,1,1,1,GridBagConstraints.CENTER,GridBagConstraints.BOTH,
                         new Insets(0,0,0,0),0,0));
-                JButton cb = new JButton("This color!");
                 cb.addActionListener(new ActionListener() {
                     @Override
                     public void actionPerformed(ActionEvent e) {
                         colorFrame.dispose();
                         color=cc.getColor();
+                        cb.setBackground(color);
+                        ok.setBackground(color);
                         showThoughtsButton.setBackground(color);
                         editButton.setBackground(color);
                         deleteButton.setBackground(color);
+                        sortButton.setBackground(color);
                         colorChooserButton.setBackground(color);
                         listCommands.setForeground(color);
                         doButton.setBackground(color);
@@ -76,6 +184,7 @@ public class Interface{
                         but.setColor(color);
                         bwc.setColor(color);
                         cf.setColor(color);
+                        languageChooserButton.setBackground(color);
                     }
                 });
                 colorFrame.add(cb, new GridBagConstraints(
@@ -112,13 +221,11 @@ public class Interface{
         panelc.setBackground(Color.white);
         paneld.setBackground(Color.white);
         for(int i=0;i<coll.size();i++){
-            String[] obj = {coll.get(i).getName(),coll.get(i).getAge().toString(), coll.get(i).getTroublesWithTheLaw().toString()};
+            String[] obj = {coll.get(i).getName(),coll.get(i).getAge().toString(), ResourceBundle.getBundle("Locale", Interface.getLocale()).getString(coll.get(i).getTroublesWithTheLaw().toString()),coll.get(i).getTimeOfCreate().format(formatter)};
             collt.addData(obj);
         }
         collections.setForeground(Color.BLACK);
-        collections.getColumnModel().getColumn(0).setMinWidth(250);
-        collections.getColumnModel().getColumn(1).setMinWidth(100);
-        collections.getColumnModel().getColumn(2).setMinWidth(100);
+        collections.getColumnModel().getColumn(3).setResizable(false);
         collections.getColumnModel().getColumn(2).setResizable(false);
         collections.getColumnModel().getColumn(1).setResizable(false);
         collections.getColumnModel().getColumn(0).setResizable(false);
@@ -153,19 +260,16 @@ public class Interface{
         });
 
         collections.addMouseListener(new MouseAdapter() {
-            @Override
             public void mouseClicked(MouseEvent e) {
                 if(e.getClickCount()==2 && e.getButton()==MouseEvent.BUTTON1) but.edit();
             }
         });
-
-        doButton = new JButton("Do");
         doButton.setFont(new Font("Verdana", Font.BOLD, 14));
-        dlm.addElement("Remove");
-        dlm.addElement("Save");
-        dlm.addElement("Add person");
-        dlm.addElement("Add in json");
-        dlm.addElement("Hust");
+        dlm.addElement(ResourceBundle.getBundle("Locale",locale).getString("Remove"));
+        dlm.addElement(ResourceBundle.getBundle("Locale",locale).getString("AddPerson"));
+        dlm.addElement(ResourceBundle.getBundle("Locale",locale).getString("AddInJson"));
+        dlm.addElement(ResourceBundle.getBundle("Locale",locale).getString("hust"));
+        dlm.addElement(ResourceBundle.getBundle("Locale",locale).getString("Filter"));
         listCommands.setFont(new Font("Verdana", Font.PLAIN, 12));
         listCommands.setForeground(Color.BLUE);
         listCommands.setBackground(Color.white);
@@ -194,18 +298,35 @@ public class Interface{
 
         jf.add(panelc);
         colorChooserButton.setFont(new Font("Verdana", Font.BOLD,15));
+        sortButton.setFont(new Font("Verdana", Font.BOLD,15));
+        sortButton.setLocation(0,50);
+        sortButton.setSize(140,40);
+        languageChooserButton.setFont(new Font("Verdana", Font.BOLD,15));
+        languageChooserButton.setSize(270,40);
+        languageChooserButton.setLocation(330,50);
+        sortButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                sort();
+            }
+        });
         colorChooserButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 colorChooser();
             }
         });
-        colorChooserButton.setSize(250,40);
-        colorChooserButton.setLocation(170,50);
+        languageChooserButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {languageChooser();}
+        });
+        colorChooserButton.setSize(200,40);
+        colorChooserButton.setLocation(130,50);
         paneld.add(colorChooserButton);
+        paneld.add(languageChooserButton);
+        paneld.add(sortButton);
         jf.add(paneld);
         jf.setVisible(true);
-
     }
 
     public static LinkedList<String> fromFileToString(String path) throws FileNotFoundException, SecurityException, IOException{
@@ -267,7 +388,7 @@ public class Interface{
             try{nh = StringToObject(jsonLines.get(i));
                 coll.add(nh);}catch (NullPointerException | KarlsonNameException e){a++;}
         }
-        if(a==1)System.out.println(a + " of NormalHuaman's is not correct in the file");
+        if(a==1)System.out.println(a + " of NormalHuman's is not correct in the file");
         if(a>1) System.out.println(a + " of NormalHuman's are not correct in the file");
         return coll;
     }
@@ -296,36 +417,47 @@ public class Interface{
 
     }
 
-    public static void getMessage()throws  IOException, JsonSyntaxException{
-            StringBuilder mesIn = new StringBuilder();
-            mesIn.append((char) dis.read());
-            while (dis.available() != 0) {
-                mesIn.append((char) dis.read());
-            }
-            message = gson.fromJson(mesIn.toString(), Message.class);
+    public static void getMessage(){
+        try {
+            int size = socketIS.read();
+            byte[] mes = new byte[size*512];
+            socketIS.read(mes);
+            bais = new ByteArrayInputStream(mes);
+            dis = new ObjectInputStream(bais);
+            message = (Message) dis.readObject();
+            bais.close();
+            dis.close();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
     }
 
     public static void sendMessage(){
         try {
-            String mesOut = gson.toJson(message);
-            byte sizeOut = (byte) Math.ceil((double) (mesOut.getBytes().length + 1) / (double) 512);
-            byte[] buf = new byte[mesOut.getBytes().length + 1];
-            buf[0] = sizeOut;
-            System.arraycopy(mesOut.getBytes(), 0, buf, 1, mesOut.getBytes().length);
-            dos.write(buf);
+            baos = new ByteArrayOutputStream();
+            dos = new ObjectOutputStream(baos);
+            dos.writeObject(message);
+            baos.flush();
+            dos.flush();
+            System.out.println(message.getState());
+            socketOS.write((int)Math.ceil((double)baos.size()/(double)512));
+            socketOS.write(baos.toByteArray());
+            socketOS.flush();
+            baos.reset();
+            dos.reset();
         }catch (IOException e){
 
         }
     }
     public static void main(String[] args){
         try {
-            gson = new Gson();
-            socket = new Socket("172.16.172.217", 23543);
-            secondSocket = new Socket("172.16.172.217", 23544);
+            gson = new GsonBuilder().addDeserializationExclusionStrategy(new GsonDeserializeExclusion()).create();
+            socket = new Socket("172.16.172.217", 23500);
+            secondSocket = new Socket("172.16.172.217", 23501);
             socketOS = socket.getOutputStream();
             socketIS = socket.getInputStream();
-            dis = new DataInputStream(socketIS);
-            dos = new DataOutputStream(socketOS);
+            baos = new ByteArrayOutputStream();
+            dos = new ObjectOutputStream(baos);
             message = new Message(ConnectionState.NEED_DATA);
             message.maxID=-10;
             message.clearData();
@@ -335,11 +467,9 @@ public class Interface{
             coll = new LinkedList<>(message.getData());
             new AnotherConnection(secondSocket, coll, collt).start();
             SwingUtilities.invokeLater(() -> new Interface());
-        }catch(ConnectException e){
-            new Dialog("Нет подключения!Сервер отключён!",Interface.getColor());
+        }catch(ConnectException e) {
+            new Dialog("Нет подключения!Сервер отключён!", Interface.getColor());
             System.exit(1);
-        }catch (JsonSyntaxException e){
-           new Dialog("На сервере что-то сломалось", Interface.getColor());
         } catch(Exception e){
             e.printStackTrace();
         }

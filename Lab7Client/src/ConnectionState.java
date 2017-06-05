@@ -12,4 +12,3 @@ public class ConnectionState implements Serializable {
     public static final byte READ=24;
     public static final byte ERROR=25;
 }
-

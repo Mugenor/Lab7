@@ -17,6 +17,7 @@ import javax.swing.event.CaretListener;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.LinkedList;
+import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,15 +29,18 @@ public class EditWindow extends JFrame {
     private CollectTable collections;
     private LinkedList<NormalHuman> linkedList;
     private JPanel panel = new JPanel();
-    private NormalHuman nh= new NormalHuman();
+    private NormalHuman nh = new NormalHuman();
     private JTextField field = new JTextField(20);
     private JTextField thoughtsField = new JTextField();
-    private JButton Add = new JButton("Add");
-    private JButton Del = new JButton("Delete");
-    private JRadioButton True = new JRadioButton("true");
-    private JRadioButton False = new JRadioButton("false");
-    private JButton ok = new JButton("Ok");
-    private JButton canc = new JButton("Cancel");
+    private JLabel label = new JLabel(ResourceBundle.getBundle("Locale",Interface.getLocale()).getString("Age"));
+    private JButton Add = new JButton(ResourceBundle.getBundle("Locale",Interface.getLocale()).getString("Add"));
+    private JButton Del = new JButton(ResourceBundle.getBundle("Locale",Interface.getLocale()).getString("Delete"));
+    private JRadioButton True = new JRadioButton(ResourceBundle.getBundle("Locale",Interface.getLocale()).getString("true"));
+    private JRadioButton False = new JRadioButton(ResourceBundle.getBundle("Locale",Interface.getLocale()).getString("false"));
+    private JButton ok = new JButton(ResourceBundle.getBundle("Locale",Interface.getLocale()).getString("Ok"));
+    private JButton canc = new JButton(ResourceBundle.getBundle("Locale",Interface.getLocale()).getString("Cancel"));
+    private JLabel name = new JLabel(ResourceBundle.getBundle("Locale",Interface.getLocale()).getString("Name"));
+    private JLabel trobL = new JLabel(ResourceBundle.getBundle("Locale",Interface.getLocale()).getString("TroublesWithTheLaw"));
     private DefaultListModel<String> dlm = new DefaultListModel();
     private JList<String> list = new JList(dlm);
     private SpinnerNumberModel snm = new SpinnerNumberModel(1,1,100,1);
@@ -44,13 +48,13 @@ public class EditWindow extends JFrame {
     private JTextField tf = ((JSpinner.DefaultEditor) spin.getEditor()).getTextField();
     private JLabel excNameLabel= new JLabel();
     private JLabel excAgeLabel = new JLabel();
-    private JLabel excThoughtLabel = new JLabel();
     public EditWindow(){}
     public EditWindow(String name, CollectTable collections, LinkedList<NormalHuman> linkedList , EditExit ee){
         setTitle(name);
             this.collections = collections;
             this.linkedList = linkedList;
             try {
+                nh = new NormalHuman();
                 nh.setName("SetName");
             } catch (KarlsonNameException e) {
             }
@@ -69,6 +73,20 @@ public class EditWindow extends JFrame {
     public  void setColor(Color colo){
         c = colo;
         doColors();
+    }
+    public void updateLocale(){
+        try {
+            Add.setText(ResourceBundle.getBundle("Locale", Interface.getLocale()).getString("Add"));
+            label.setText(ResourceBundle.getBundle("Locale",Interface.getLocale()).getString("Age"));
+            Del.setText(ResourceBundle.getBundle("Locale", Interface.getLocale()).getString("Delete"));
+            True.setText(ResourceBundle.getBundle("Locale", Interface.getLocale()).getString("true"));
+            False.setText(ResourceBundle.getBundle("Locale", Interface.getLocale()).getString("false"));
+            ok.setText(ResourceBundle.getBundle("Locale", Interface.getLocale()).getString("Ok"));
+            canc.setText(ResourceBundle.getBundle("Locale", Interface.getLocale()).getString("Cancel"));
+            name.setText(ResourceBundle.getBundle("Locale",Interface.getLocale()).getString("Name"));
+            this.setTitle(ResourceBundle.getBundle("Locale", Interface.getLocale()).getString("AddPerson"));
+            trobL.setText(ResourceBundle.getBundle("Locale",Interface.getLocale()).getString("TroublesWithTheLaw"));
+        }catch(Exception e){e.printStackTrace();}
     }
     public boolean isOpened(){
         return opened;
@@ -99,12 +117,10 @@ public class EditWindow extends JFrame {
         field.setLocation(27, 30);
         field.setText(nh.getName());
         //
-        JLabel label = new JLabel("Age:");
         label.setLocation(28, 48);
         label.setSize(50, 30);
         label.setFont(new Font("Verdana", Font.PLAIN, 13));
         //
-        JLabel name = new JLabel("Name:");
         name.setLocation(27, 0);
         name.setSize(50, 30);
         name.setFont(new Font("Verdana", Font.PLAIN, 13));
@@ -124,7 +140,6 @@ public class EditWindow extends JFrame {
         thoughtsField.setSize(new Dimension(200, 20));
         thoughtsField.setLocation(new Point(27, 180));
         //
-        JLabel trobL = new JLabel("Troubles with the law:");
         trobL.setLocation(27, 200);
         trobL.setSize(180, 30);
         trobL.setFont(new Font("Verdana", Font.BOLD, 13));
@@ -174,11 +189,6 @@ public class EditWindow extends JFrame {
         excNameLabel.setSize(500,30);
         excNameLabel.setFont(new Font("Verdana", Font.BOLD, 13));
         panel.add(excNameLabel);
-        excThoughtLabel.setForeground(Color.RED);
-        excThoughtLabel.setLocation(28,60);
-        excThoughtLabel.setSize(500,30);
-        excThoughtLabel.setFont(new Font("Verdana", Font.BOLD, 13));
-        panel.add(excThoughtLabel);
         panel.add(True);
         panel.add(name);
         panel.add(False);
@@ -214,12 +224,7 @@ public class EditWindow extends JFrame {
             excAgeLabel.setText("");
             return;
         }
-        try{Pattern pattern = Pattern.compile("[а-я]");
-            Matcher matcher = pattern.matcher(field.getText());
-            if(matcher.find()) throw new KarlsonNameException("rus");
-            pattern = Pattern.compile("[А-Я]");
-            matcher = pattern.matcher(field.getText());
-            if(matcher.find()) throw new KarlsonNameException("rus");
+        try{
             if(field.getText().equals("")) throw new KarlsonNameException("empty");
             nh.setName(field.getText());
             nh.setAge(snm.getNumber().longValue());
@@ -243,9 +248,8 @@ public class EditWindow extends JFrame {
             Interface.sendMessage();
             dispose();
         }catch(KarlsonNameException exc){
-            if(exc.getMessage().equals("empty"))excNameLabel.setText("Write name of NormalHuman");
-                else if(exc.getMessage().equals("rus")) excNameLabel.setText("Not russian characters");
-                    else excNameLabel.setText("NormalHuman can't be Karlson");
+            if(exc.getMessage().equals("empty"))excNameLabel.setText(ResourceBundle.getBundle("Locale", Interface.getLocale()).getString("Write name of NormalHuman"));
+                    else excNameLabel.setText("अल्लाह अकबर");
             panel.updateUI();
         }
     }
@@ -309,17 +313,7 @@ public class EditWindow extends JFrame {
         thoughtsField.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                Pattern pattern = Pattern.compile("[а-я]");
-                Matcher matcher = pattern.matcher(thoughtsField.getText());
-                if(!matcher.find()){
-                    pattern = Pattern.compile("[А-Я]");
-                    matcher = pattern.matcher(thoughtsField.getText());
-                    if(!matcher.find()) {
-                        addThought();
-                        excThoughtLabel.setText("");
-                    }
-                    else excThoughtLabel.setText("Not russian characters");
-                } else excThoughtLabel.setText("Not russian characters");
+                addThought();
             }
         });
         Del.addActionListener(new ActionListener() {
@@ -331,17 +325,7 @@ public class EditWindow extends JFrame {
         Add.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                Pattern pattern = Pattern.compile("[а-я]");
-                Matcher matcher = pattern.matcher(thoughtsField.getText());
-                if(!matcher.find()){
-                    pattern = Pattern.compile("[А-Я]");
-                    matcher = pattern.matcher(thoughtsField.getText());
-                    if(!matcher.find()) {
-                        addThought();
-                        excThoughtLabel.setText("");
-                    }
-                    else excThoughtLabel.setText("Not russian characters");
-                } else excThoughtLabel.setText("Not russian characters");
+                addThought();
             }
         });
         list.addKeyListener(new KeyAdapter() {

@@ -2,28 +2,19 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ResourceBundle;
 
 /**
  * Created by bespa on 16.05.2017.
  */
 public class Dialog extends JDialog {
-    private static Color c = null;
-    private String error;
     JButton ok = new JButton("Ok");
-    public void setColor(Color col){
-        c=col;
-        ok.setBackground(c);
-    }
-    public void setError(String er){
-        error = er;
-    }
-    Dialog(String er,Color c){
-        error = er;
+    Dialog(String error,Color c){
         JDialog dialog = new JDialog();
         dialog.setLayout(null);
         dialog.setLocationRelativeTo(null);
         dialog.setModal(true);
-        JLabel label = new JLabel(error);
+        JLabel label = new JLabel(ResourceBundle.getBundle("Locale", Interface.getLocale()).getString(error));
         label.setFont(new Font("Verdana", Font.BOLD, 12));
         dialog.add(label);
         label.setLocation(30,0);

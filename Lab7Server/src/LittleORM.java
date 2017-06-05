@@ -5,10 +5,13 @@ import myAnnotations.*;
 import javax.sql.PooledConnection;
 import javax.sql.rowset.CachedRowSet;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.*;
 import java.util.*;
 
 /**
@@ -48,7 +51,14 @@ public class LittleORM {
             Column column = field.getAnnotation(Column.class);
             if(column!=null) {
                 quary.append(column.name()).append(",");
-                if(field.getType()==String.class)
+                DateTime dateTime = field.getAnnotation(DateTime.class);
+                if (dateTime != null) {
+                    ZonedDateTime time = (ZonedDateTime) field.get(obj);
+                    values.append("'").append(time.getYear()).append("-").append(time.getMonth().getValue())
+                            .append("-").append(time.getDayOfMonth()).append(" ").append(time.getHour())
+                            .append(":").append(time.getMinute()).append(":").append(time.getSecond()).append("',");
+                } else
+                if (field.getType() == String.class)
                     values.append("'").append(field.get(obj)).append("',");
                 else values.append(field.get(obj)).append(",");
             }
@@ -64,6 +74,7 @@ public class LittleORM {
         Connection connection = pooledConnection.getConnection();
         connection.setAutoCommit(false);
         Statement statement = connection.createStatement();
+        System.out.println(quary);
         statement.execute(quary.toString());
         for(String quaryProp: queriesProp){
             statement.execute(quaryProp);
@@ -112,7 +123,8 @@ public class LittleORM {
             }
             return null;
         }
-    public <T> LinkedList<T> getAllObjects(Class<T> cl)throws ORMException, ClassNotFoundException, SQLException, IllegalAccessException, InstantiationException{
+    public <T> LinkedList<T> getAllObjects(Class<T> cl)throws ORMException, ClassNotFoundException, SQLException, IllegalAccessException,
+            InstantiationException, NoSuchMethodException, InvocationTargetException{
         Table table = (Table) cl.getAnnotation(Table.class);
         if (table == null) throw new ORMException();
         LinkedList<T> result = new LinkedList<>();
@@ -154,8 +166,19 @@ public class LittleORM {
             for(String column: match.keySet()){
                 Field field = match.get(column);
                 field.setAccessible(true);
-                field.set(newInstance, rowSet.getObject(column));
-                field.setAccessible(false);
+                DateTime date = field.getAnnotation(DateTime.class);
+                if(date!=null){
+                    Instant instant = rowSet.getTimestamp(column).toInstant();
+                    ZonedDateTime time = ZonedDateTime.ofInstant(rowSet.getTimestamp(column).toInstant(), ZoneOffset.UTC);
+                    System.out.println(instant);
+                    System.out.println(time);
+                    Class<?> dateType = field.getType();
+                    Method fac = dateType.getMethod("ofInstant", Instant.class, ZoneId.class);
+                    field.set(newInstance, fac.invoke(null, rowSet.getTimestamp(column).toInstant(), ZoneOffset.UTC));
+                }else {
+                    field.set(newInstance, rowSet.getObject(column));
+                    field.setAccessible(false);
+                }
             }
             for(Field property: properties){
                 Property prop = property.getAnnotation(Property.class);
@@ -306,12 +329,21 @@ public class LittleORM {
             for(Field field: fields){
                 Column column = field.getAnnotation(Column.class);
                 Id idi = field.getAnnotation(Id.class);
+                DateTime dateTime = field.getAnnotation(DateTime.class);
+                field.setAccessible(true);
+                if (dateTime != null && column!=null) {
+                    ZonedDateTime time = (ZonedDateTime) field.get(obj);
+                    quaryObj.append(column.name()).append("='").append(time.getYear()).append("-")
+                            .append(time.getMonth().getValue())
+                            .append("-").append(time.getDayOfMonth()).append(" ").append(time.getHour())
+                            .append(":").append(time.getMinute()).append(":").append(time.getSecond()).append("',");
+                } else
                 if(column!=null && idi==null){
-                    field.setAccessible(true);
                     if(field.getType()==String.class)
                         quaryObj.append(column.name()).append("='").append(field.get(obj)).append("',");
                     else quaryObj.append(column.name()).append("=").append(field.get(obj)).append(",");
                 }
+                field.setAccessible(false);
             }
             quaryObj.deleteCharAt(quaryObj.length()-1);
             quaryObj.append(" where ").append(idName).append("=").append(id).append(";");

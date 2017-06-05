@@ -1,8 +1,8 @@
 import classes.NormalHuman;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
-import java.io.DataInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.HashSet;
@@ -13,28 +13,31 @@ import java.util.LinkedList;
  */
 public class AnotherConnection extends Thread {
     private Socket socket;
-    private DataInputStream dis;
+    private ObjectInputStream dis;
+    private ByteArrayInputStream bais;
+    private InputStream socketIS;
     private Gson gson;
     private Message message;
     private LinkedList<NormalHuman> list;
     private CollectTable collt;
     public AnotherConnection(Socket socket, LinkedList<NormalHuman> list, CollectTable collt)throws IOException{
-        this.socket = socket;
-        dis = new DataInputStream(socket.getInputStream());
-        gson = new Gson();
+        this.socket=socket;
+        gson = new GsonBuilder().addDeserializationExclusionStrategy(new GsonDeserializeExclusion()).create();
         this.list = list;
         this.collt = collt;
+        socketIS = socket.getInputStream();
     }
     public void run(){
         try {
             while (true) {
-                StringBuilder mesIn = new StringBuilder();
-                mesIn.append((char) dis.read());
-                while (dis.available() != 0) {
-                    mesIn.append((char) dis.read());
-                }
-                System.out.println(mesIn);
-                message = gson.fromJson(mesIn.toString(), Message.class);
+                int size = socketIS.read();
+                byte[] mes = new byte[size*512];
+                socketIS.read(mes);
+                bais = new ByteArrayInputStream(mes);
+                dis = new ObjectInputStream(bais);
+                message = (Message) dis.readObject();
+                bais.close();
+                dis.close();
                 if(message.getState() == ConnectionState.ERROR){
                     new Dialog("Sorry, something went wrong.\n Your changes didn't save!", Interface.getColor());
                     System.exit(1);

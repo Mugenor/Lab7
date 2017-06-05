@@ -1,10 +1,18 @@
 package classes;
 
 import myAnnotations.*;
+
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 
 @Table(name="normalhuman")
 public class NormalHuman extends Human implements Comparable<NormalHuman>{
+    @DateTime
+    @Column(name="timeOfCreate")
+    protected ZonedDateTime timeOfCreate;
     @Column(name="age")
     protected Long age=1l;
     @Property(type="classes.Thoughts" , refColumn = "id")
@@ -12,11 +20,17 @@ public class NormalHuman extends Human implements Comparable<NormalHuman>{
     public NormalHuman(String name) throws KarlsonNameException{
         super(name);
         this.thoughts = new ArrayList<Thoughts>();
+        Instant time = Instant.now();
+        timeOfCreate = ZonedDateTime.ofInstant(time, ZoneOffset.UTC);
     }
     public NormalHuman(){
         super();
         this.thoughts = new ArrayList<Thoughts>();
+        Instant time = Instant.now();
+        timeOfCreate = ZonedDateTime.ofInstant(time, ZoneOffset.UTC);
     }
+    public ZonedDateTime getTimeOfCreate(){return timeOfCreate;}
+    public void setTimeOfCreate() {timeOfCreate = ZonedDateTime.now();}
     public String getThoughts(int i) {
         if (i <= thoughts.size() && i >= 0) {
             return thoughts.get(i).toString();
