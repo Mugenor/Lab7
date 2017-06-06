@@ -19,9 +19,13 @@ public class ButtonsUnderTable {
     private EditWindow ew = new EditWindow();
     private boolean openedShowWindow = false;
     private boolean openedEditWindow= false;
+    private int editID=-10;
     private JFrame jf= new JFrame(ResourceBundle.getBundle("Locale", Interface.getLocale()).getString("ShowThoughts"));;
     private DefaultListModel<String> dlm= new DefaultListModel<>();
     private JList<String> list = new JList<>(dlm);
+    public int isOpenedEditWindow(){
+        return editID;
+    }
     public void setColor(Color col){
         c = col;
         ew.setColor(col);
@@ -54,6 +58,7 @@ public class ButtonsUnderTable {
     public void edit(){
         if((collections.getSelectedRow()!=-1&&!openedEditWindow) && !(Interface.notEditable.contains(coll.get(collections.getSelectedRow()).getId()))) {
             openedEditWindow=true;
+            editID=coll.get(collections.getSelectedRow()).getId();
             Interface.notEditable.add(coll.get(collections.getSelectedRow()).getId());
             Interface.message.getData().clear();
             Interface.message.reinitialize(Interface.notEditable);
@@ -70,12 +75,14 @@ public class ButtonsUnderTable {
                         @Override
                         public void doOnExit() {
                             openedEditWindow = false;
+                            editID=-10;
                         }
                     });
                     ew.addWindowListener(new WindowAdapter() {
                         @Override
                         public void windowClosing(WindowEvent e) {
                             openedEditWindow = false;
+                            editID=-10;
                         }
                     });
                     ew.setLocation((int)Interface.getFrameLocation().getX()-320,(int)Interface.getFrameLocation().getY());

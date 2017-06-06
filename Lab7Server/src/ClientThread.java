@@ -10,6 +10,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -151,6 +152,10 @@ public class ClientThread extends Thread {
                 Main.threadHandler.removeConnection(secondConnection);
             }
             requests.put(ConnectionState.FINAL_ITERATE);
+            Main.notEditable = new HashSet<>(message.getNotEditable());
+            message.setState(ConnectionState.NEW_DATA);
+            message.setTypeOfOperation(Message.notEdit);
+            Main.threadHandler.sendMessage(message, secondConnection);
             System.out.println("Клиент " + str + " был отключён.");
         }catch (Exception e){
             e.printStackTrace();

@@ -213,6 +213,11 @@ public class Interface{
             public void windowClosing(WindowEvent e) {
                 message.clearData();
                 message.setState(ConnectionState.DISCONNECT);
+                int editID = but.isOpenedEditWindow();
+                if(editID!=-10) {
+                    notEditable.remove(editID);
+                }
+                message.reinitialize(notEditable);
                 sendMessage();
                 System.exit(0);
             }
