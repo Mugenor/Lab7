@@ -47,14 +47,13 @@ abstract public class Human implements Serializable {
         if (this == o) return true;
         if (o==null || !(o instanceof Human)) return false;
         Human human = (Human) o;
-        if (getTroublesWithTheLaw() != human.getTroublesWithTheLaw()) return false;
         return this.id == human.getId();
     }
     public int hashCode() {
         return 31 * (getTroublesWithTheLaw() ? 1 : 0) + getName().hashCode() + id;
     }
     public String toString(){
-        return "Имя: " + this.getName() +
+        return "Id: " + this.getId() + "\nИмя: " + this.getName() +
                 "\nПроблемы с законом: " + this.getTroublesWithTheLaw();
     }
 }

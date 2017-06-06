@@ -47,7 +47,6 @@ abstract public class Human implements Serializable {
         if (this == o) return true;
         if (o==null || !(o instanceof Human)) return false;
         Human human = (Human) o;
-        if (getTroublesWithTheLaw() != human.getTroublesWithTheLaw()) return false;
         return this.id == human.getId();
     }
     public int hashCode() {

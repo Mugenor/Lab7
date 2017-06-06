@@ -2,10 +2,7 @@ package classes;
 import myAnnotations.*;
 
 import java.text.SimpleDateFormat;
-import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
+import java.time.*;
 import java.util.ArrayList;
 
 @Table(name="normalhuman")
@@ -26,7 +23,7 @@ public class NormalHuman extends Human implements Comparable<NormalHuman>{
     public NormalHuman(){
         super();
         this.thoughts = new ArrayList<Thoughts>();
-        Instant time = Instant.now();
+        Instant time = LocalDateTime.now().toInstant(ZoneOffset.UTC);
         timeOfCreate = ZonedDateTime.ofInstant(time, ZoneOffset.UTC);
         System.out.println(timeOfCreate);
         System.out.println(time);
@@ -87,5 +84,8 @@ public class NormalHuman extends Human implements Comparable<NormalHuman>{
     public int countOfThoughts(){return thoughts.size();}
     public int compareTo(NormalHuman nh){
         return super.name.length()-nh.getName().length()+countOfThoughts()-nh.countOfThoughts()+(troublesWithTheLaw ? 10: -10) - (nh.getTroublesWithTheLaw() ? 10: -10);
+    }
+    public boolean equals(Object nh){
+        return super.equals(nh);
     }
 }

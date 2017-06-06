@@ -168,13 +168,11 @@ public class LittleORM {
                 field.setAccessible(true);
                 DateTime date = field.getAnnotation(DateTime.class);
                 if(date!=null){
-                    Instant instant = rowSet.getTimestamp(column).toInstant();
-                    ZonedDateTime time = ZonedDateTime.ofInstant(rowSet.getTimestamp(column).toInstant(), ZoneOffset.UTC);
-                    System.out.println(instant);
+                    ZonedDateTime time = ZonedDateTime.ofInstant(rowSet.getTimestamp(column).toLocalDateTime().toInstant(ZoneOffset.UTC), ZoneOffset.UTC);
                     System.out.println(time);
                     Class<?> dateType = field.getType();
                     Method fac = dateType.getMethod("ofInstant", Instant.class, ZoneId.class);
-                    field.set(newInstance, fac.invoke(null, rowSet.getTimestamp(column).toInstant(), ZoneOffset.UTC));
+                    field.set(newInstance, fac.invoke(null, rowSet.getTimestamp(column).toLocalDateTime().toInstant(ZoneOffset.UTC), ZoneOffset.UTC));
                 }else {
                     field.set(newInstance, rowSet.getObject(column));
                     field.setAccessible(false);
@@ -228,7 +226,7 @@ public class LittleORM {
             Collections.addAll(fields, tClass.getDeclaredFields());
             tClass = tClass.getSuperclass();
         }
-        int id=0;
+        int id=-10;
         String idName="";
         for(Field field: fields){
             Id idi = field.getAnnotation(Id.class);
@@ -242,7 +240,7 @@ public class LittleORM {
                 if(prop!=null) proeprties.add(field);
             }
         }
-        if(id==0) throw new ORMException();
+        if(id==-10) throw new ORMException();
         for(Field field: proeprties){
             Property prop = field.getAnnotation(Property.class);
             Class<?> clProp = Class.forName(prop.type());
@@ -332,7 +330,9 @@ public class LittleORM {
                 DateTime dateTime = field.getAnnotation(DateTime.class);
                 field.setAccessible(true);
                 if (dateTime != null && column!=null) {
-                    ZonedDateTime time = (ZonedDateTime) field.get(obj);
+                    ZonedDateTime zonedDateTimetime = (ZonedDateTime) field.get(obj);
+                    LocalDateTime localDateTime = zonedDateTimetime.toLocalDateTime();
+                    ZonedDateTime time = ZonedDateTime.ofInstant(localDateTime, ZoneOffset.UTC, ZoneId.systemDefault());
                     quaryObj.append(column.name()).append("='").append(time.getYear()).append("-")
                             .append(time.getMonth().getValue())
                             .append("-").append(time.getDayOfMonth()).append(" ").append(time.getHour())
