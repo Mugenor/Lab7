@@ -27,6 +27,7 @@ public class Interface{
     static ByteArrayOutputStream baos;
     static ByteArrayInputStream bais;
     private static boolean isChanged = false;
+    private static SelectedLanguage selected = new SelectedLanguage();
     private static JFrame jf = new JFrame();
     private static JPanel panelu = new JPanel();
     private static JPanel paneld= new JPanel(null);
@@ -54,6 +55,7 @@ public class Interface{
     private static ButtonsWithCommands bwc=null;
     private static JButton cb = new JButton(ResourceBundle.getBundle("Locale",locale).getString("ChooseColor"));
     private static CloseFrame cf = new CloseFrame(bwc);
+    private static MyPlayer sound = new MyPlayer(new File(System.getenv("Source") + "\\wel_rus.wav"));
     public static void setIsChanged(boolean changed){isChanged = changed;}
     public static Point getFrameLocation(){return jf.getLocation();}
     public synchronized static String getFile(){return file;}
@@ -123,14 +125,70 @@ public class Interface{
         ok.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if(rus.isSelected())
-                    setLocale(new Locale("ru"));
-                if(isl.isSelected())
-                    setLocale(new Locale("isl"));
-                if(isp.isSelected())
-                    setLocale(new Locale("isp"));
-                if(grec.isSelected())
-                    setLocale(new Locale("gr"));
+                if (rus.isSelected()) {
+                    if (selected.selected != 1) {
+                        selected.selected = 1;
+                        sound.stop();
+                        try {
+                            sound.close();
+                        } catch (Exception exc) {
+                            exc.printStackTrace();
+                        }
+                        sound = new MyPlayer(new File(System.getenv("Source") + "\\wel_rus.wav"));
+                        if (sound.isReleased()) {
+                            sound.play();
+                        }
+                        setLocale(new Locale("ru"));
+                    }
+                }
+                if (isl.isSelected()) {
+                    if (selected.selected != 2) {
+                        selected.selected = 2;
+                        sound.stop();
+                        try {
+                            sound.close();
+                        } catch (Exception exc) {
+                            exc.printStackTrace();
+                        }
+                        sound = new MyPlayer(new File(System.getenv("Source") + "\\wel_isl.wav"));
+                        if (sound.isReleased()) {
+                            sound.play();
+                        }
+                        setLocale(new Locale("isl"));
+                    }
+                }
+                if (isp.isSelected()) {
+                    if (selected.selected != 3) {
+                        selected.selected = 3;
+                        sound.stop();
+                        try {
+                            sound.close();
+                        } catch (Exception exc) {
+                            exc.printStackTrace();
+                        }
+                        sound = new MyPlayer(new File(System.getenv("Source") + "\\wel_isp.wav"));
+                        if (sound.isReleased()) {
+                            sound.play();
+                        }
+                        setLocale(new Locale("isp"));
+                    }
+                }
+                if (grec.isSelected()) {
+                    if (selected.selected != 4) {
+                        selected.selected = 4;
+                        sound.stop();
+                        try {
+                            sound.close();
+                        } catch (Exception exc) {
+                            exc.printStackTrace();
+                        }
+                        sound = new MyPlayer(new File(System.getenv("Source") + "\\wel_gr.wav"));
+                        if (sound.isReleased()) {
+                            sound.play();
+                        }
+                        setLocale(new Locale("gr"));
+                    }
+                }
             }
         });
         language.add(ok);
@@ -161,6 +219,7 @@ public class Interface{
         });
     }
     Interface(){
+        selected.selected = 1;
         but =  new ButtonsUnderTable(collections, collt, coll);
         bwc = new ButtonsWithCommands(listCommands, coll, collt, collections);
         showThoughtsButton.setFont(new Font("Verdana", Font.BOLD,13));
@@ -309,7 +368,6 @@ public class Interface{
         cb.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                System.out.println("Пробую поменять цвет");
                 color=cc.getColor();
                 System.out.println(color);
                 cb.setBackground(color);
@@ -333,6 +391,9 @@ public class Interface{
                 2,1,1,1, 1,1, GridBagConstraints.SOUTH, GridBagConstraints.HORIZONTAL,
                 new Insets(0,0,0,0), 0, 0));
         jf.setVisible(true);
+        if(sound.isReleased()){
+            sound.play();
+        }
     }
 
     public static LinkedList<String> fromFileToString(String path) throws FileNotFoundException, SecurityException, IOException{
