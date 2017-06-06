@@ -156,40 +156,6 @@ public class Interface{
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                colorFrame = new JFrame(ResourceBundle.getBundle("Locale",locale).getString("ChooseColor"));
-                colorFrame.setAutoRequestFocus(true);
-                colorFrame.setSize(new Dimension(700,400));
-                colorFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-                colorFrame.setLocationRelativeTo(null);
-                colorFrame.setLayout(new GridBagLayout());
-                JColorChooser cc = new JColorChooser();
-                colorFrame.add(cc, new GridBagConstraints(
-                        0,0,3,1,1,1,GridBagConstraints.CENTER,GridBagConstraints.BOTH,
-                        new Insets(0,0,0,0),0,0));
-                cb.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        colorFrame.dispose();
-                        color=cc.getColor();
-                        cb.setBackground(color);
-                        ok.setBackground(color);
-                        showThoughtsButton.setBackground(color);
-                        editButton.setBackground(color);
-                        deleteButton.setBackground(color);
-                        sortButton.setBackground(color);
-                        colorChooserButton.setBackground(color);
-                        listCommands.setForeground(color);
-                        doButton.setBackground(color);
-                        collections.setForeground(color);
-                        but.setColor(color);
-                        bwc.setColor(color);
-                        cf.setColor(color);
-                        languageChooserButton.setBackground(color);
-                    }
-                });
-                colorFrame.add(cb, new GridBagConstraints(
-                        2,1,1,1, 1,1, GridBagConstraints.SOUTH, GridBagConstraints.HORIZONTAL,
-                        new Insets(0,0,0,0), 0, 0));
                 colorFrame.setVisible(true);
             }
         });
@@ -331,6 +297,41 @@ public class Interface{
         paneld.add(languageChooserButton);
         paneld.add(sortButton);
         jf.add(paneld);
+        colorFrame.setAutoRequestFocus(true);
+        colorFrame.setSize(new Dimension(700,400));
+        colorFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        colorFrame.setLocationRelativeTo(null);
+        colorFrame.setLayout(new GridBagLayout());
+        JColorChooser cc = new JColorChooser();
+        colorFrame.add(cc, new GridBagConstraints(
+                0,0,3,1,1,1,GridBagConstraints.CENTER,GridBagConstraints.BOTH,
+                new Insets(0,0,0,0),0,0));
+        cb.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                System.out.println("Пробую поменять цвет");
+                color=cc.getColor();
+                System.out.println(color);
+                cb.setBackground(color);
+                ok.setBackground(color);
+                showThoughtsButton.setBackground(color);
+                editButton.setBackground(color);
+                deleteButton.setBackground(color);
+                sortButton.setBackground(color);
+                colorChooserButton.setBackground(color);
+                listCommands.setForeground(color);
+                doButton.setBackground(color);
+                collections.setForeground(color);
+                but.setColor(color);
+                bwc.setColor(color);
+                cf.setColor(color);
+                languageChooserButton.setBackground(color);
+                colorFrame.dispose();
+            }
+        });
+        colorFrame.add(cb, new GridBagConstraints(
+                2,1,1,1, 1,1, GridBagConstraints.SOUTH, GridBagConstraints.HORIZONTAL,
+                new Insets(0,0,0,0), 0, 0));
         jf.setVisible(true);
     }
 
